@@ -1,0 +1,37 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Network Panel",
+        "description": "Doda ploščo Omrežje v stransko vrstico: internetni usmerjevalnik, usmerjevalnike, stikala, Wi-Fi, povezane naprave, filter DNS, teste hitrosti in obratni posrednik iz spodnjih integracij (najdenih: {count}). Pustite vse vire označene, da bere vse.",
+        "data": {
+          "sources": "Viri",
+          "switches": "Druga stikala"
+        },
+        "data_description": {
+          "sources": "Integracije, ki jih plošča bere.",
+          "switches": "Naprave, prikazane kot stikala poleg tistih, prepoznanih po modelu (stikalo, katerega vrata so entitete)."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Network Panel je že nastavljen."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Network Panel",
+        "description": "Spremenite integracije, ki jih plošča bere, in naprave, prikazane kot stikala. Nastavitve prikaza so v plošči.",
+        "data": {
+          "sources": "Viri",
+          "switches": "Druga stikala"
+        },
+        "data_description": {
+          "sources": "Integracije, ki jih plošča bere.",
+          "switches": "Naprave, prikazane kot stikala poleg tistih, prepoznanih po modelu (stikalo, katerega vrata so entitete)."
+        }
+      }
+    }
+  }
+}

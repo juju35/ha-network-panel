@@ -1,0 +1,37 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Network Panel",
+        "description": "Adds the Network panel to the sidebar: the internet box, routers, switches, Wi-Fi, connected devices, DNS filter, speed tests and reverse proxy of the integrations below ({count} found). Leave every source ticked to read them all.",
+        "data": {
+          "sources": "Sources",
+          "switches": "Other switches"
+        },
+        "data_description": {
+          "sources": "Integrations the panel reads.",
+          "switches": "Devices shown as switches besides the ones recognised by their model (a switch whose ports are entities)."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Network Panel is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Network Panel",
+        "description": "Change the integrations the panel reads and the devices shown as switches. The display settings are in the panel.",
+        "data": {
+          "sources": "Sources",
+          "switches": "Other switches"
+        },
+        "data_description": {
+          "sources": "Integrations the panel reads.",
+          "switches": "Devices shown as switches besides the ones recognised by their model (a switch whose ports are entities)."
+        }
+      }
+    }
+  }
+}

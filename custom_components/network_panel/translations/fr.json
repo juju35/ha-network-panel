@@ -1,0 +1,37 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Network Panel",
+        "description": "Ajoute le panneau Réseau à la barre latérale : la box internet, les routeurs, les switchs, le Wi-Fi, les appareils connectés, le filtre DNS, les tests de débit et le reverse proxy des intégrations ci-dessous ({count} trouvées). Laissez toutes les sources cochées pour toutes les lire.",
+        "data": {
+          "sources": "Sources",
+          "switches": "Autres switchs"
+        },
+        "data_description": {
+          "sources": "Intégrations lues par le panneau.",
+          "switches": "Appareils affichés comme switchs en plus de ceux reconnus par leur modèle (un switch dont les ports sont des entités)."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Network Panel est déjà configuré."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Network Panel",
+        "description": "Changez les intégrations lues par le panneau et les appareils affichés comme switchs. Les réglages d’affichage sont dans le panneau.",
+        "data": {
+          "sources": "Sources",
+          "switches": "Autres switchs"
+        },
+        "data_description": {
+          "sources": "Intégrations lues par le panneau.",
+          "switches": "Appareils affichés comme switchs en plus de ceux reconnus par leur modèle (un switch dont les ports sont des entités)."
+        }
+      }
+    }
+  }
+}

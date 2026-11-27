@@ -1,0 +1,37 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Network Panel",
+        "description": "Přidá panel Síť do postranního panelu: internetový router, routery, přepínače, Wi-Fi, připojená zařízení, filtr DNS, testy rychlosti a reverzní proxy z integrací níže (nalezeno: {count}). Nechte všechny zdroje zaškrtnuté, aby četl všechny.",
+        "data": {
+          "sources": "Zdroje",
+          "switches": "Další přepínače"
+        },
+        "data_description": {
+          "sources": "Integrace, které panel čte.",
+          "switches": "Zařízení zobrazená jako přepínače kromě těch rozpoznaných podle modelu (přepínač, jehož porty jsou entity)."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Network Panel je již nastaven."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Network Panel",
+        "description": "Změňte integrace, které panel čte, a zařízení zobrazená jako přepínače. Nastavení zobrazení jsou v panelu.",
+        "data": {
+          "sources": "Zdroje",
+          "switches": "Další přepínače"
+        },
+        "data_description": {
+          "sources": "Integrace, které panel čte.",
+          "switches": "Zařízení zobrazená jako přepínače kromě těch rozpoznaných podle modelu (přepínač, jehož porty jsou entity)."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Network Panel",
+        "description": "Pridá panel Sieť do bočného panela: internetový router, routery, prepínače, Wi-Fi, pripojené zariadenia, filter DNS, testy rýchlosti a reverzný proxy z integrácií nižšie (nájdené: {count}). Nechajte všetky zdroje začiarknuté, aby čítal všetky.",
+        "data": {
+          "sources": "Zdroje",
+          "switches": "Ďalšie prepínače"
+        },
+        "data_description": {
+          "sources": "Integrácie, ktoré panel číta.",
+          "switches": "Zariadenia zobrazené ako prepínače okrem tých rozpoznaných podľa modelu (prepínač, ktorého porty sú entity)."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Network Panel je už nastavený."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Network Panel",
+        "description": "Zmeňte integrácie, ktoré panel číta, a zariadenia zobrazené ako prepínače. Nastavenia zobrazenia sú v paneli.",
+        "data": {
+          "sources": "Zdroje",
+          "switches": "Ďalšie prepínače"
+        },
+        "data_description": {
+          "sources": "Integrácie, ktoré panel číta.",
+          "switches": "Zariadenia zobrazené ako prepínače okrem tých rozpoznaných podľa modelu (prepínač, ktorého porty sú entity)."
+        }
+      }
+    }
+  }
+}
