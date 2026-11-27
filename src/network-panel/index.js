@@ -13,4 +13,4 @@ export { NETWORK_LANGS, NETWORK_PANEL_EN, NETWORK_PANEL_VERSION, NETWORK_TABS, n
 export { networkBoxModel, networkRouterKind } from "./models.js";
 export { networkDailyPeaks, networkHostState, networkHttp, networkTrackers, NetworkPanel } from "./panel.js";
 export { networkSceneSvg } from "./scene.js";
-export { networkChassisSvg, networkPortState } from "./switch.js";
+export { networkChassisSvg, networkPortState, networkPortsByName } from "./switch.js";

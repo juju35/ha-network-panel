@@ -22,7 +22,7 @@ import { NETWORK_DNS_ART } from "./dns-art.js";
 import { networkBoxModel, networkBoxPicture, networkRouterPicture } from "./models.js";
 import { networkSceneSvg } from "./scene.js";
 import { NETWORK_PANEL_STYLE } from "./styles.js";
-import { networkChassisSvg, networkPortState } from "./switch.js";
+import { networkChassisSvg, networkPortState, networkPortsByName } from "./switch.js";
 
 // Material Design icon paths (mdi:lan, refresh, menu, web, chevron)
 const NETWORK_ICONS = {
@@ -268,7 +268,7 @@ export class NetworkPanel extends HTMLElement {
     };
     add(inv.box?.entities);
     for (const r of inv.routers) add(r.entities);
-    for (const s of inv.switches) for (const p of s.ports) ids.push(p.entity);
+    for (const s of inv.switches) for (const p of this._portsOf(s)) ids.push(p.entity);
     ids.push(...inv.wifi);
     add(inv.dns?.entities);
     ids.push(...(inv.dns?.switches || []));
@@ -330,8 +330,12 @@ export class NetworkPanel extends HTMLElement {
     return null;
   }
 
+  _portsOf(sw) {
+    return sw.ports.length ? sw.ports : networkPortsByName(this._hass?.states, sw.name);
+  }
+
   _switchPorts(sw) {
-    return sw.ports.map((p) => {
+    return this._portsOf(sw).map((p) => {
       const st = this._st(p.entity);
       return { label: String(p.n), state: networkPortState(st), title: p.label || this._t("port_n", { n: p.n }) };
     });

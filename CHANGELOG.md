@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1 - 2026-11-27
+
+### Fixes
+- The box is the box itself, not a host it tracks: a NAS or another device that shares its device with its own integration no longer replaces the Freebox (and the status pill no longer reads "No internet box").
+- Only the box integration's own entities are read on a device shared with another integration.
+- Switch ports set up as SNMP sensors in YAML (no device) are found by the switch's name (`sensor.<switch>_port_<n>_status`), and an SNMP port reading 2 (down) is no longer shown up.
+- Switches chosen in the settings no longer fail on Home Assistant versions without a device's main config entry.
+
 ## 1.0.0 - 2026-11-27
 
 ### Features
