@@ -39,6 +39,13 @@
   "hosts": "Värdar",
   "hosts_ok": "{ok} / {n} OK",
   "in_error": "Med fel",
+  "proxy_running": "Körs",
+  "proxy_stopped": "Stoppad",
+  "rules_active": "Aktiva regler",
+  "certs_expiring": "Certifikat som går ut",
+  "not_checked": "inte övervakad",
+  "cert_expires": "certifikatet går ut {when}",
+  "cert_expired": "certifikatet har gått ut",
   "wifi_networks": "Wi-Fi-nätverk",
   "state_on": "på",
   "state_off": "av",
@@ -58,7 +65,6 @@
   "col_mac": "MAC",
   "col_conn": "Anslutning",
   "col_seen": "Sedd",
-  "col_state": "Tillstånd",
   "wired": "Kabel",
   "no_devices": "Ingen enhetsspårare från en router ännu.",
   "no_match": "Inget resultat.",
@@ -87,6 +93,5 @@
   "empty_switches": "Ingen switch hittades. Switchar känns igen på modellen; andra kan läggas till i integrationens alternativ.",
   "empty_proxy": "Ingen värd hittades.",
   "external_ip": "Extern IP",
-  "last_change": "Senaste ändring",
   "open_admin": "Administrationssida"
 }

@@ -2,6 +2,15 @@
 // Wi-Fi networks, router device trackers, AdGuard Home, Speedtest.net and a reverse proxy. Neutral names only.
 export const NOW = Date.parse("2026-03-12T18:30:00Z");
 const ago = (s) => new Date(NOW - s * 1000).toISOString();
+// Reverse proxy rule domains: [name, upstream problem state, days before the certificate expires]
+const PROXY_HOSTS = [
+  ["home", "off", 74],
+  ["auth", "off", 9],
+  ["photos", "off", 61],
+  ["media", "off", 52],
+  ["docs", "on", 80],
+  ["git", "unknown", 33],
+];
 const st = (entity_id, state, attributes = {}, changed = 3600) => ({ entity_id, state: String(state), attributes, last_changed: ago(changed), last_updated: ago(60) });
 
 const switchPorts = (prefix, name, up) =>
@@ -55,12 +64,16 @@ export const states = Object.fromEntries(
     st("sensor.speedtest_download", 890.4, { friendly_name: "SpeedTest Download", unit_of_measurement: "Mbit/s", device_class: "data_rate" }, 5400),
     st("sensor.speedtest_upload", 612.7, { friendly_name: "SpeedTest Upload", unit_of_measurement: "Mbit/s", device_class: "data_rate" }, 5400),
     st("sensor.speedtest_ping", 4, { friendly_name: "SpeedTest Ping", unit_of_measurement: "ms" }, 5400),
-    st("binary_sensor.proxy_home", "on", { friendly_name: "home.example.org" }, 86400 * 12),
-    st("binary_sensor.proxy_auth", "on", { friendly_name: "auth.example.org" }, 86400 * 12),
-    st("binary_sensor.proxy_photos", "on", { friendly_name: "photos.example.org" }, 86400 * 5),
-    st("binary_sensor.proxy_media", "on", { friendly_name: "media.example.org" }, 86400 * 5),
-    st("binary_sensor.proxy_docs", "off", { friendly_name: "docs.example.org" }, 1800),
-    st("binary_sensor.proxy_git", "on", { friendly_name: "git.example.org" }, 86400 * 30),
+    st("binary_sensor.zoraxy_running", "on", { friendly_name: "Zoraxy Running" }),
+    st("sensor.zoraxy_proxy_rules", 7, { friendly_name: "Zoraxy Proxy rules" }),
+    st("sensor.zoraxy_active_rules", 6, { friendly_name: "Zoraxy Active rules" }),
+    // Rule domains: upstream check (problem sensor, on = offline), certificate expiry, expiring flag; docs is down,
+    // git is not monitored, auth's certificate expires soon
+    ...PROXY_HOSTS.flatMap(([h, up, days]) => [
+      st(`binary_sensor.zoraxy_upstream_${h}`, up, { domain: `${h}.example.org`, device_class: "problem" }, up === "on" ? 1800 : 86400 * 5),
+      st(`sensor.zoraxy_certificate_${h}`, new Date(NOW + days * 86400000).toISOString(), { domain: `${h}.example.org`, device_class: "timestamp" }),
+      st(`binary_sensor.zoraxy_cert_expiring_${h}`, days < 14 ? "on" : "off", { domain: `${h}.example.org`, device_class: "problem" }),
+    ]),
     ...devices.map(([id, name, ip, state, essid, changed], i) =>
       st(`device_tracker.${id}`, state, { friendly_name: name, source_type: "router", ip, mac: MAC(i), host_name: id.replace(/_/g, "-"), ...(essid ? { essid } : { is_wired: true }) }, changed),
     ),
@@ -113,7 +126,14 @@ export const inventory = {
   proxy: {
     platform: "reverse_proxy",
     title: "Reverse Proxy",
-    hosts: ["home", "auth", "photos", "media", "docs", "git"].map((h) => ({ name: `${h}.example.org`, entity: `binary_sensor.proxy_${h}` })),
+    summary: { running: "binary_sensor.zoraxy_running", rules: "sensor.zoraxy_proxy_rules", active: "sensor.zoraxy_active_rules" },
+    hosts: PROXY_HOSTS.map(([h]) => ({
+      id: `${h}_example_org`,
+      problem: true,
+      upstream: `binary_sensor.zoraxy_upstream_${h}`,
+      cert: `sensor.zoraxy_certificate_${h}`,
+      expiring: `binary_sensor.zoraxy_cert_expiring_${h}`,
+    })),
   },
   sources: [
     { platform: "freebox", title: "Freebox Server", state: "loaded", entry_id: "e1" },

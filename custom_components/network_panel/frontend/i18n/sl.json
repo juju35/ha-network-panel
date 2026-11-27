@@ -39,6 +39,13 @@
   "hosts": "Gostitelji",
   "hosts_ok": "{ok} / {n} OK",
   "in_error": "Z napako",
+  "proxy_running": "Deluje",
+  "proxy_stopped": "Ustavljen",
+  "rules_active": "Aktivna pravila",
+  "certs_expiring": "Potekajoči certifikati",
+  "not_checked": "ni nadzorovano",
+  "cert_expires": "certifikat poteče {when}",
+  "cert_expired": "certifikat je potekel",
   "wifi_networks": "Omrežja Wi-Fi",
   "state_on": "vklopljeno",
   "state_off": "izklopljeno",
@@ -58,7 +65,6 @@
   "col_mac": "MAC",
   "col_conn": "Povezava",
   "col_seen": "Videno",
-  "col_state": "Stanje",
   "wired": "Kabel",
   "no_devices": "Še ni sledilnikov naprav iz usmerjevalnika.",
   "no_match": "Ni rezultatov.",
@@ -87,6 +93,5 @@
   "empty_switches": "Ni najdenega stikala. Stikala se prepoznajo po modelu; druga dodate v možnostih integracije.",
   "empty_proxy": "Ni najdenega gostitelja.",
   "external_ip": "Zunanji IP",
-  "last_change": "Zadnja sprememba",
   "open_admin": "Skrbniška stran"
 }

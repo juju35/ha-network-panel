@@ -39,6 +39,13 @@
   "hosts": "Værter",
   "hosts_ok": "{ok} / {n} OK",
   "in_error": "Med fejl",
+  "proxy_running": "Kører",
+  "proxy_stopped": "Stoppet",
+  "rules_active": "Aktive regler",
+  "certs_expiring": "Udløbende certifikater",
+  "not_checked": "ikke overvåget",
+  "cert_expires": "certifikat udløber {when}",
+  "cert_expired": "certifikat udløbet",
   "wifi_networks": "Wi-Fi-netværk",
   "state_on": "tændt",
   "state_off": "slukket",
@@ -58,7 +65,6 @@
   "col_mac": "MAC",
   "col_conn": "Forbindelse",
   "col_seen": "Set",
-  "col_state": "Tilstand",
   "wired": "Kabel",
   "no_devices": "Ingen enhedssporing fra en router endnu.",
   "no_match": "Intet resultat.",
@@ -87,6 +93,5 @@
   "empty_switches": "Ingen switch fundet. Switche genkendes på deres model; andre kan tilføjes i integrationens indstillinger.",
   "empty_proxy": "Ingen vært fundet.",
   "external_ip": "Ekstern IP",
-  "last_change": "Seneste ændring",
   "open_admin": "Administrationsside"
 }

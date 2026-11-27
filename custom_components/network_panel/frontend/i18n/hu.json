@@ -39,6 +39,13 @@
   "hosts": "Hosztok",
   "hosts_ok": "{ok} / {n} OK",
   "in_error": "Hibás",
+  "proxy_running": "Fut",
+  "proxy_stopped": "Leállítva",
+  "rules_active": "Aktív szabályok",
+  "certs_expiring": "Lejáró tanúsítványok",
+  "not_checked": "nincs figyelve",
+  "cert_expires": "a tanúsítvány lejár: {when}",
+  "cert_expired": "a tanúsítvány lejárt",
   "wifi_networks": "Wi-Fi-hálózatok",
   "state_on": "be",
   "state_off": "ki",
@@ -58,7 +65,6 @@
   "col_mac": "MAC",
   "col_conn": "Kapcsolat",
   "col_seen": "Látva",
-  "col_state": "Állapot",
   "wired": "Kábel",
   "no_devices": "Még nincs routerből származó eszközkövető.",
   "no_match": "Nincs találat.",
@@ -87,6 +93,5 @@
   "empty_switches": "Nem található switch. A switcheket a modelljük alapján ismeri fel; a többi az integráció beállításaiban adható hozzá.",
   "empty_proxy": "Nem található hoszt.",
   "external_ip": "Külső IP",
-  "last_change": "Utolsó változás",
   "open_admin": "Adminisztrációs oldal"
 }

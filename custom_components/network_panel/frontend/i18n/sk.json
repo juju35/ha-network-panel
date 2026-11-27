@@ -39,6 +39,13 @@
   "hosts": "Hostitelia",
   "hosts_ok": "{ok} / {n} OK",
   "in_error": "S chybou",
+  "proxy_running": "Beží",
+  "proxy_stopped": "Zastavený",
+  "rules_active": "Aktívne pravidlá",
+  "certs_expiring": "Expirujúce certifikáty",
+  "not_checked": "nesledované",
+  "cert_expires": "certifikát vyprší {when}",
+  "cert_expired": "certifikát vypršal",
   "wifi_networks": "Wi-Fi siete",
   "state_on": "zap.",
   "state_off": "vyp.",
@@ -58,7 +65,6 @@
   "col_mac": "MAC",
   "col_conn": "Pripojenie",
   "col_seen": "Videné",
-  "col_state": "Stav",
   "wired": "Kábel",
   "no_devices": "Zatiaľ žiadne sledovanie zariadení z routera.",
   "no_match": "Žiadny výsledok.",
@@ -87,6 +93,5 @@
   "empty_switches": "Nenašiel sa žiadny switch. Switche sa rozpoznávajú podľa modelu; ostatné sa pridávajú v možnostiach integrácie.",
   "empty_proxy": "Nenašiel sa žiadny hostiteľ.",
   "external_ip": "Verejná IP",
-  "last_change": "Posledná zmena",
   "open_admin": "Stránka správy"
 }

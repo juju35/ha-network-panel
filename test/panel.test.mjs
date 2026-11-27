@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
-import { history, inventory, states } from "../scripts/mock-states.mjs";
+import { history, inventory, NOW, states } from "../scripts/mock-states.mjs";
 import { defined_elements, lib } from "./load.mjs";
 
 const i18n = new URL("../custom_components/network_panel/frontend/i18n/", import.meta.url);
@@ -218,4 +218,30 @@ test("ports of a switch without port entities are found by its name (SNMP sensor
     [2, "sensor.switch_sejour_port_2_status"],
   ]);
   assert.deepEqual(lib.networkPortsByName(states, ""), []);
+});
+
+test("proxy hosts: an upstream problem sensor is offline when on, unmonitored when unknown", () => {
+  assert.equal(lib.networkProxyHostState({ problem: true }, { state: "on" }), "bad");
+  assert.equal(lib.networkProxyHostState({ problem: true }, { state: "off" }), "ok");
+  assert.equal(lib.networkProxyHostState({ problem: true }, { state: "unknown" }), "idle");
+  assert.equal(lib.networkProxyHostState({ problem: false }, { state: "off" }), "bad");
+});
+
+test("the proxy tab counts hosts once, problems first, with the certificates", () => {
+  const p = panel();
+  p._now = () => NOW;
+  const hosts = p._proxyHosts();
+  // docs is offline, auth's certificate expires soon, git is not monitored
+  assert.deepEqual(
+    hosts.map((h) => [h.name, h.state]),
+    [["docs.example.org", "bad"], ["auth.example.org", "ok"], ["home.example.org", "ok"], ["media.example.org", "ok"], ["photos.example.org", "ok"], ["git.example.org", "idle"]],
+  );
+  const c = p._proxyCounts(hosts);
+  assert.deepEqual([c.ok, c.monitored, c.bad, c.expiring, c.active, c.rules, c.running], [4, 5, 1, 1, 6, 7, true]);
+  p._tab = "proxy";
+  p._render(true);
+  const html = p.shadowRoot.innerHTML;
+  assert.match(html, /Active rules/);
+  assert.match(html, /href="https:\/\/docs\.example\.org"/);
+  assert.match(html, /not monitored/);
 });
