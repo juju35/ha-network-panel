@@ -57,6 +57,16 @@ export const networkHostState = (st) => {
   return "idle";
 };
 
+/**
+ * A proxy host's state from its inventory entry: a problem sensor (Reverse Proxy's upstream check) is bad when on, ok
+ * when off and idle (not monitored) otherwise; any other entity reads as networkHostState.
+ */
+export const networkProxyHostState = (host, st) => {
+  if (!host.problem) return networkHostState(st);
+  if (st?.state === "on") return "bad";
+  return st?.state === "off" ? "ok" : "idle";
+};
+
 /** The device trackers of routers (the connected devices), connected first then by name. */
 export const networkTrackers = (states) =>
   Object.values(states || {})
@@ -273,7 +283,8 @@ export class NetworkPanel extends HTMLElement {
     add(inv.dns?.entities);
     ids.push(...(inv.dns?.switches || []));
     add(inv.speed?.entities);
-    for (const h of inv.proxy?.hosts || []) ids.push(h.entity);
+    for (const h of inv.proxy?.hosts || []) ids.push(...[h.upstream, h.cert, h.expiring].filter(Boolean));
+    add(inv.proxy?.summary);
     const parts = ids.map((id) => this._st(id)?.last_updated || "-");
     for (const s of networkTrackers(this._hass.states)) parts.push(`${s.entity_id}:${s.state}:${s.last_changed}`);
     return parts.join("|");
@@ -446,13 +457,63 @@ export class NetworkPanel extends HTMLElement {
     return `<div class="c"><div class="h"><span>${networkEsc(this._t("speed_7d"))}</span><span class="s m">${networkEsc(sp.title)}</span></div><div class="bars">${bars}</div><div class="days">${days.map((d) => `<span>${networkEsc(d)}</span>`).join("")}</div><div class="r" style="margin-top:10px;font-size:12.5px"><span>${line}</span><button class="b" data-act="test" data-arg="${networkEsc(sp.entities.download || "")}">${networkEsc(this._t("run_test"))}</button></div></div>`;
   }
 
+  /** The clock (a method, so the tests can set it). */
+  _now() {
+    return Date.now();
+  }
+
+  /** Each proxy host with its name (the rule domain), state, certificate expiry and expiring flag. */
+  _proxyHosts() {
+    const order = { bad: 0, warn: 1, ok: 2, idle: 3 };
+    return (this._inv.proxy?.hosts || [])
+      .map((h) => {
+        const up = this._st(h.upstream);
+        const cert = this._st(h.cert);
+        const expiry = cert && !Number.isNaN(Date.parse(cert.state)) ? Date.parse(cert.state) : null;
+        const expiring = this._st(h.expiring)?.state === "on" || (expiry !== null && expiry < this._now());
+        const state = networkProxyHostState(h, up);
+        const name = up?.attributes?.domain || cert?.attributes?.domain || h.name || String(h.id).replace(/_/g, ".");
+        return { ...h, name, state, expiry, expiring, rank: state === "ok" && expiring ? order.warn : order[state] };
+      })
+      .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
+  }
+
+  /** Counts for the proxy: hosts monitored and online, offline, certificates expiring, rules active. */
+  _proxyCounts(hosts) {
+    const sum = this._inv.proxy.summary || {};
+    const val = (id) => networkValue(this._st(id));
+    const monitored = hosts.filter((h) => h.state !== "idle");
+    return {
+      ok: monitored.filter((h) => h.state === "ok").length,
+      monitored: monitored.length,
+      bad: hosts.filter((h) => h.state === "bad").length,
+      expiring: hosts.filter((h) => h.expiring).length,
+      rules: val(sum.rules),
+      active: val(sum.active),
+      running: sum.running ? this._st(sum.running)?.state === "on" : null,
+    };
+  }
+
+  _proxyKpis(c) {
+    const kpi = (label, v, cls = "") => `<div class="t"><div class="s m">${networkEsc(this._t(label))}</div><b class="${cls}">${networkEsc(v)}</b></div>`;
+    return [
+      c.rules !== null ? kpi("rules_active", c.active !== null ? `${c.active} / ${c.rules}` : String(c.rules)) : "",
+      kpi("hosts", this._t("hosts_ok", { ok: c.ok, n: c.monitored })),
+      kpi("in_error", String(c.bad), c.bad ? "bad" : ""),
+      kpi("certs_expiring", String(c.expiring), c.expiring ? "warn" : ""),
+    ].join("");
+  }
+
+  _proxyPill(c) {
+    if (c.running === null) return "";
+    return `<span class="pill ${c.running ? "ok" : "bad"}"><span class="dot"></span>${networkEsc(this._t(c.running ? "proxy_running" : "proxy_stopped"))}</span>`;
+  }
+
   _proxyCard() {
     const px = this._inv.proxy;
     if (!px) return "";
-    const hosts = px.hosts.map((h) => networkHostState(this._st(h.entity)));
-    const ok = hosts.filter((s) => s === "ok").length;
-    const bad = hosts.filter((s) => s === "bad").length;
-    return `<div class="c"><div class="h"><span>${networkEsc(this._t("proxy"))}</span><span class="s m">${networkEsc(px.title)}</span></div><div class="kpis"><div class="t"><div class="s m">${networkEsc(this._t("hosts"))}</div><b>${networkEsc(this._t("hosts_ok", { ok, n: hosts.length }))}</b></div><div class="t"><div class="s m">${networkEsc(this._t("in_error"))}</div><b class="${bad ? "bad" : ""}">${bad}</b></div></div></div>`;
+    const c = this._proxyCounts(this._proxyHosts());
+    return `<div class="c"><div class="h"><span>${networkEsc(this._t("proxy"))}</span><span class="s m">${networkEsc(px.title)}</span></div><div class="kpis">${this._proxyKpis(c)}</div></div>`;
   }
 
   _wifiRow(id, withButton) {
@@ -632,15 +693,24 @@ export class NetworkPanel extends HTMLElement {
   _tab_proxy() {
     const px = this._inv.proxy;
     const lang = this._lang;
-    if (!px.hosts.length) return this._empty("empty_proxy");
-    const rows = px.hosts
+    const hosts = this._proxyHosts();
+    const c = this._proxyCounts(hosts);
+    const title = px.title && px.title.toLowerCase() !== this._t("proxy").toLowerCase() ? `<span class="s m"> · ${networkEsc(px.title)}</span>` : "";
+    const head = `<div class="c"><div class="h"><span>${networkEsc(this._t("proxy"))}${title}</span>${this._proxyPill(c)}</div><div class="kpis">${this._proxyKpis(c)}</div></div>`;
+    if (!hosts.length) return `${head}${this._empty("empty_proxy")}`;
+    const rel = new Intl.RelativeTimeFormat(lang, { numeric: "auto" });
+    const rows = hosts
       .map((h) => {
-        const st = this._st(h.entity);
-        const s = networkHostState(st);
-        return `<tr><td><b>${networkEsc(h.name)}</b></td><td class="${s === "bad" ? "bad" : s === "ok" ? "ok" : "m"}">${networkEsc(st ? st.state : "-")}</td><td class="m">${networkEsc(st ? networkAgo(lang, st.last_changed) : "-")}</td></tr>`;
+        const days = h.expiry !== null ? Math.round((h.expiry - this._now()) / 86400000) : null;
+        const cert =
+          days === null ? "" : days < 0 ? this._t("cert_expired") : this._t("cert_expires", { when: rel.format(days, "day") });
+        const label = this._t(h.state === "bad" ? "offline" : h.state === "ok" ? "online" : "not_checked");
+        const cls = h.state === "bad" ? "bad" : h.state === "ok" ? (h.expiring ? "warn" : "ok") : "idle";
+        const link = /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(h.name) ? ` href="https://${networkEsc(h.name)}" target="_blank" rel="noopener noreferrer"` : "";
+        return `<div class="wifi host"><span class="d ${cls}"></span><div class="grow"><b>${link ? `<a${link}>${networkEsc(h.name)}</a>` : networkEsc(h.name)}</b><div class="s ${h.expiring ? "warn" : "m"}">${networkEsc(cert || "\u00a0")}</div></div><span class="s ${h.state === "bad" ? "bad" : h.state === "ok" ? "ok" : "m"}" style="font-weight:600">${networkEsc(label)}</span></div>`;
       })
       .join("");
-    return `<div class="c"><div class="h"><span>${networkEsc(this._t("proxy"))}</span><span class="s m">${networkEsc(px.title)}</span></div><div class="scroll"><table><thead><tr><th>${networkEsc(this._t("hosts"))}</th><th>${networkEsc(this._t("col_state"))}</th><th>${networkEsc(this._t("last_change"))}</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    return `${head}<div class="c"><div class="h"><span>${networkEsc(this._t("hosts"))}</span><span class="s m">${hosts.length}</span></div><div class="hosts">${rows}</div></div>`;
   }
 
   // ----- Settings -----

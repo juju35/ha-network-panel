@@ -39,6 +39,13 @@
   "hosts": "Hosts",
   "hosts_ok": "{ok} / {n} OK",
   "in_error": "Met fout",
+  "proxy_running": "Actief",
+  "proxy_stopped": "Gestopt",
+  "rules_active": "Actieve regels",
+  "certs_expiring": "Verlopende certificaten",
+  "not_checked": "niet bewaakt",
+  "cert_expires": "certificaat verloopt {when}",
+  "cert_expired": "certificaat verlopen",
   "wifi_networks": "Wifinetwerken",
   "state_on": "aan",
   "state_off": "uit",
@@ -58,7 +65,6 @@
   "col_mac": "MAC",
   "col_conn": "Verbinding",
   "col_seen": "Gezien",
-  "col_state": "Status",
   "wired": "Kabel",
   "no_devices": "Nog geen apparaattracker van een router.",
   "no_match": "Geen resultaat.",
@@ -87,6 +93,5 @@
   "empty_switches": "Geen switch gevonden. Switches worden aan hun model herkend; andere kun je toevoegen in de opties van de integratie.",
   "empty_proxy": "Geen host gevonden.",
   "external_ip": "Extern IP",
-  "last_change": "Laatste wijziging",
   "open_admin": "Beheerpagina"
 }

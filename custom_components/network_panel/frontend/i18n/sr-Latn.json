@@ -39,6 +39,13 @@
   "hosts": "Hostovi",
   "hosts_ok": "{ok} / {n} OK",
   "in_error": "Sa greškom",
+  "proxy_running": "Radi",
+  "proxy_stopped": "Zaustavljen",
+  "rules_active": "Aktivna pravila",
+  "certs_expiring": "Sertifikati pred istekom",
+  "not_checked": "ne nadgleda se",
+  "cert_expires": "sertifikat ističe {when}",
+  "cert_expired": "sertifikat je istekao",
   "wifi_networks": "Wi-Fi mreže",
   "state_on": "uključena",
   "state_off": "isključena",
@@ -58,7 +65,6 @@
   "col_mac": "MAC",
   "col_conn": "Veza",
   "col_seen": "Viđen",
-  "col_state": "Stanje",
   "wired": "Kabl",
   "no_devices": "Još nema praćenja uređaja sa rutera.",
   "no_match": "Nema rezultata.",
@@ -87,6 +93,5 @@
   "empty_switches": "Nije pronađen svič. Svičevi se prepoznaju po modelu; ostali se dodaju u opcijama integracije.",
   "empty_proxy": "Nije pronađen host.",
   "external_ip": "Javna IP adresa",
-  "last_change": "Poslednja promena",
   "open_admin": "Administrativna stranica"
 }

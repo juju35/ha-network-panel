@@ -39,6 +39,13 @@
   "hosts": "Hôtes",
   "hosts_ok": "{ok} / {n} OK",
   "in_error": "En erreur",
+  "proxy_running": "En marche",
+  "proxy_stopped": "Arrêté",
+  "rules_active": "Règles actives",
+  "certs_expiring": "Certificats à renouveler",
+  "not_checked": "non surveillé",
+  "cert_expires": "certificat : expire {when}",
+  "cert_expired": "certificat expiré",
   "wifi_networks": "Réseaux Wi-Fi",
   "state_on": "actif",
   "state_off": "coupé",
@@ -58,7 +65,6 @@
   "col_mac": "MAC",
   "col_conn": "Connexion",
   "col_seen": "Vu",
-  "col_state": "État",
   "wired": "Câble",
   "no_devices": "Aucun suivi d’appareil par un routeur pour l’instant.",
   "no_match": "Aucun résultat.",
@@ -87,6 +93,5 @@
   "empty_switches": "Aucun switch trouvé. Les switchs sont reconnus par leur modèle ; les autres s’ajoutent dans les options de l’intégration.",
   "empty_proxy": "Aucun hôte trouvé.",
   "external_ip": "IP publique",
-  "last_change": "Dernier changement",
   "open_admin": "Page d’administration"
 }

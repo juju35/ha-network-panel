@@ -9,7 +9,7 @@ states. The connected devices are the router device trackers, read by the panel 
 - switches: the switches (told by their model, or chosen in the options), with their ports;
 - dns: AdGuard Home or Pi-hole, its query counters and its protection switches;
 - speed: the speed test sensors (Speedtest.net, Fast.com);
-- proxy: the hosts of a reverse proxy integration.
+- proxy: a reverse proxy's counters and its hosts (rule domains: upstream check, certificate).
 """
 
 from __future__ import annotations
@@ -197,6 +197,46 @@ def _first(entities: list[er.RegistryEntry], domain: str, slots: dict[str, re.Pa
     return found
 
 
+# Reverse Proxy (juju35/ha-reverse-proxy): the proxy's counters, and per rule domain its upstream check (a problem
+# sensor, on when an upstream is offline), its certificate's expiry (timestamp) and its expiring flag.
+PROXY_SUMMARY = {
+    "running": "proxy_running",
+    "rules": "proxy_rules",
+    "active": "active_rules",
+    "certificates": "tls_certificates",
+    "version": "version",
+}
+PROXY_HOST_KEYS = {"upstream_problem": "upstream", "certificate": "cert", "certificate_expiring": "expiring"}
+PROXY_HOST_ID = re.compile(r"_(?:upstream_problem|cert_expiry|cert_expiring)_(.+)$")
+
+
+def _proxy(entry: Any, entities: list[er.RegistryEntry]) -> dict[str, Any]:
+    """The proxy's summary entities and its hosts: one per rule domain (Reverse Proxy), else one per binary sensor
+    or sensor of the integration (a problem sensor is bad when on, any other when off)."""
+    keyed = {e.translation_key: e.entity_id for e in entities if e.translation_key in PROXY_SUMMARY.values()}
+    summary = {slot: keyed[key] for slot, key in PROXY_SUMMARY.items() if key in keyed}
+    hosts: dict[str, dict[str, Any]] = {}
+    for e in entities:
+        role = PROXY_HOST_KEYS.get(e.translation_key or "")
+        m = PROXY_HOST_ID.search(e.unique_id or "")
+        if role and m:
+            hosts.setdefault(m.group(1), {"id": m.group(1), "problem": True})[role] = e.entity_id
+    if hosts:
+        out = [h for h in hosts.values() if "upstream" in h or "cert" in h]
+    else:
+        out = [
+            {
+                "id": e.entity_id,
+                "name": e.name or e.original_name or _object_id(e),
+                "upstream": e.entity_id,
+                "problem": (e.device_class or e.original_device_class) == "problem",
+            }
+            for e in entities
+            if e.domain in ("binary_sensor", "sensor") and not e.entity_category
+        ]
+    return {"summary": summary, "hosts": sorted(out, key=lambda h: str(h.get("name") or h["id"]))}
+
+
 def _box_id(entry_devices: list[dr.DeviceEntry], device_entities: Any) -> str | None:
     """The box among a box integration's devices: not behind another of its devices (the hosts it tracks are, and
     their device can carry another integration's name), with more than presence trackers, the most entities first."""
@@ -262,13 +302,8 @@ def async_inventory(hass: HomeAssistant) -> Inventory:
                     }
                 continue
             if platform in PROXY_PLATFORMS:
-                hosts = [
-                    {"name": e.name or e.original_name or _object_id(e), "entity": e.entity_id}
-                    for e in entry_entities
-                    if e.domain in ("binary_sensor", "sensor") and not e.entity_category
-                ]
                 if inv.proxy is None:
-                    inv.proxy = {"platform": platform, "title": entry.title, "hosts": hosts}
+                    inv.proxy = {"platform": platform, "title": entry.title, **_proxy(entry, entry_entities)}
                 continue
             entry_devices = dr.async_entries_for_config_entry(devices, entry.entry_id)
             box_id = (

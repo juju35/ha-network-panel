@@ -39,6 +39,13 @@
   "hosts": "Resursdatori",
   "hosts_ok": "{ok} / {n} OK",
   "in_error": "Ar kļūdu",
+  "proxy_running": "Darbojas",
+  "proxy_stopped": "Apturēts",
+  "rules_active": "Aktīvās kārtulas",
+  "certs_expiring": "Sertifikāti, kam beidzas termiņš",
+  "not_checked": "netiek uzraudzīts",
+  "cert_expires": "sertifikāta termiņš beidzas {when}",
+  "cert_expired": "sertifikāta termiņš beidzies",
   "wifi_networks": "Wi-Fi tīkli",
   "state_on": "ieslēgts",
   "state_off": "izslēgts",
@@ -58,7 +65,6 @@
   "col_mac": "MAC",
   "col_conn": "Savienojums",
   "col_seen": "Redzēts",
-  "col_state": "Stāvoklis",
   "wired": "Kabelis",
   "no_devices": "Vēl nav ierīču izsekotāju no maršrutētāja.",
   "no_match": "Nav rezultātu.",
@@ -87,6 +93,5 @@
   "empty_switches": "Nav atrasts komutators. Komutatorus atpazīst pēc modeļa; citus pievieno integrācijas opcijās.",
   "empty_proxy": "Nav atrasts resursdators.",
   "external_ip": "Ārējā IP",
-  "last_change": "Pēdējās izmaiņas",
   "open_admin": "Administrēšanas lapa"
 }

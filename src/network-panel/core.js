@@ -11,7 +11,7 @@
  * English is built in; the other languages are loaded on demand from /network_panel/i18n/<lang>.json.
  */
 
-export const NETWORK_PANEL_VERSION = "1.0.1";
+export const NETWORK_PANEL_VERSION = "1.0.2";
 export const NETWORK_TABS = ["overview", "devices", "wifi", "dns", "speed", "proxy", "settings"];
 // Tabs shown only when their source is there (the inventory key that brings them)
 export const NETWORK_TAB_SOURCE = { dns: "dns", speed: "speed", proxy: "proxy" };
@@ -57,6 +57,13 @@ export const NETWORK_PANEL_EN = {
   hosts: "Hosts",
   hosts_ok: "{ok} / {n} OK",
   in_error: "In error",
+  proxy_running: "Running",
+  proxy_stopped: "Stopped",
+  rules_active: "Active rules",
+  certs_expiring: "Expiring certificates",
+  not_checked: "not monitored",
+  cert_expires: "certificate expires {when}",
+  cert_expired: "certificate expired",
   wifi_networks: "Wi-Fi networks",
   state_on: "on",
   state_off: "off",
@@ -76,7 +83,6 @@ export const NETWORK_PANEL_EN = {
   col_mac: "MAC",
   col_conn: "Connection",
   col_seen: "Seen",
-  col_state: "State",
   wired: "Wired",
   no_devices: "No device tracker from a router yet.",
   no_match: "No result.",
@@ -105,7 +111,6 @@ export const NETWORK_PANEL_EN = {
   empty_switches: "No switch found. Switches are recognised by their model; others can be added in the integration's options.",
   empty_proxy: "No host found.",
   external_ip: "External IP",
-  last_change: "Last change",
   open_admin: "Admin page",
 };
 

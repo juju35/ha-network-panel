@@ -148,7 +148,7 @@ async def test_dns_speed_and_proxy(hass: HomeAssistant):
     assert inv.dns["entities"]["ratio"] == ratio
     assert inv.dns["switches"] == [protection]
     assert inv.speed["entities"] == {"download": download, "upload": upload, "ping": ping}
-    assert inv.proxy["hosts"] == [{"name": "home.example.org", "entity": host}]
+    assert inv.proxy["hosts"] == [{"id": host, "name": "home.example.org", "upstream": host, "problem": False}]
     assert inv.box is None
 
 
@@ -176,3 +176,36 @@ async def test_sources_and_switches_from_the_options(hass: HomeAssistant):
     inv = async_inventory(hass)
     assert inv.switches == []
     assert inv.sources == []
+
+
+async def test_reverse_proxy_hosts_by_rule_domain(hass: HomeAssistant):
+    """Reverse Proxy: one host per rule domain (upstream check, certificate, expiring flag), its counters apart."""
+    entry = _entry(hass, "reverse_proxy", "Zoraxy")
+    dev = _device(hass, entry, "zoraxy", "Zoraxy")
+    reg = er.async_get(hass)
+
+    def add(domain, key, uid):
+        return reg.async_get_or_create(
+            domain,
+            "reverse_proxy",
+            f"{entry.entry_id}_{uid}",
+            config_entry=entry,
+            device_id=dev.id,
+            translation_key=key,
+        ).entity_id
+
+    rules = add("sensor", "proxy_rules", "proxy_rules")
+    active = add("sensor", "active_rules", "active_rules")
+    running = add("binary_sensor", "proxy_running", "proxy_running")
+    up_a = add("binary_sensor", "upstream_problem", "upstream_problem_a_example_org")
+    cert_a = add("sensor", "certificate", "cert_expiry_a_example_org")
+    exp_a = add("binary_sensor", "certificate_expiring", "cert_expiring_a_example_org")
+    up_b = add("binary_sensor", "upstream_problem", "upstream_problem_b_example_org")
+    add("switch", "https_redirect", "https_redirect")
+
+    inv = async_inventory(hass)
+    assert inv.proxy["summary"] == {"running": running, "rules": rules, "active": active}
+    assert inv.proxy["hosts"] == [
+        {"id": "a_example_org", "problem": True, "upstream": up_a, "cert": cert_a, "expiring": exp_a},
+        {"id": "b_example_org", "problem": True, "upstream": up_b},
+    ]

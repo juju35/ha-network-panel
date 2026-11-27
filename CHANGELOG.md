@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2 - 2026-11-27
+
+### Fixes
+- Proxy: each host is a rule domain of Reverse Proxy, counted once, instead of every entity of the integration (counters, switches, certificates…); an upstream check reads offline when its problem sensor is on, not when it is off, and not monitored when unknown.
+- Proxy tab reworked like the other tabs: the proxy's state pill and its active rules, online hosts, hosts in error and expiring certificates, then the hosts as cards, problems first, each with its certificate expiry and a link to the domain.
+
 ## 1.0.1 - 2026-11-27
 
 ### Fixes

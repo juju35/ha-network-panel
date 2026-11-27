@@ -80,7 +80,9 @@ button { font:inherit; color:inherit; }
 .days { display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:8px; text-align:center; margin-top:5px; font-size:11px; color:var(--nw-muted); }
 .wifi { display:flex; align-items:center; gap:10px; background:var(--nw-soft); border-radius:12px; padding:9px 12px; }
 .wifi .d { width:9px; height:9px; border-radius:50%; flex:none; background:var(--nw-idle); }
-.wifi .d.on { background:var(--nw-ok); }
+.wifi .d.on, .wifi .d.ok { background:var(--nw-ok); } .wifi .d.bad { background:var(--nw-bad); } .wifi .d.warn { background:var(--nw-warn); }
+.hosts { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:8px; font-size:13px; }
+.host a { color:inherit; text-decoration:none; } .host a:hover { text-decoration:underline; }
 .wifi .grow { flex:1; min-width:0; }
 .wifi .grow b, .wifi .grow div { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ring { width:92px; height:92px; flex:none; }

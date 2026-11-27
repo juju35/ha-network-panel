@@ -46,7 +46,7 @@ Home Assistant integration that adds a **Network** panel to the sidebar, on top 
 - **Wi-Fi & switches**: the Wi-Fi networks (turn them on or off), the routers and access points with their client count and temperature, and **each switch's front panel** with its ports lit by their link state
 - **DNS**: queries, blocked queries, block ratio and average time of AdGuard Home or Pi-hole, and its protections (on / off)
 - **Speed**: download, upload and ping of the last test, a **Run a test** button and the daily peaks of the last 30 days
-- **Proxy**: the hosts of the reverse proxy and whether they answer
+- **Proxy**: the proxy's state and active rules, then each host (rule domain) with its upstream check — online, offline or not monitored — and when its certificate expires, problems first
 - **Settings**: the integrations read and their state, away devices shown or not, and the confirmation before turning a Wi-Fi network or a protection off
 - Tabs without a source are hidden; **administrators only**: the panel and its commands are kept for administrators
 - Light and dark themes, phones and desktops, 22 languages
@@ -60,7 +60,7 @@ Home Assistant integration that adds a **Network** panel to the sidebar, on top 
 | Routers, firewalls, mesh, switches | [UniFi Network](https://www.home-assistant.io/integrations/unifi/), [TP-Link Omada](https://www.home-assistant.io/integrations/tplink_omada/), [TP-Link Deco](https://github.com/amosyuen/ha-tplink-deco), [OPNsense](https://github.com/travisghansen/hass-opnsense), [pfSense](https://github.com/travisghansen/hass-pfsense), [ASUSWRT](https://www.home-assistant.io/integrations/asuswrt/), [NETGEAR](https://www.home-assistant.io/integrations/netgear/), [MikroTik](https://www.home-assistant.io/integrations/mikrotik/), [Keenetic NDMS2](https://www.home-assistant.io/integrations/keenetic_ndms2/), [Firewalla](https://github.com/firewalla/home-assistant), [OpenWrt (ubus / luci)](https://www.home-assistant.io/integrations/ubus/), [eero](https://github.com/schmittx/home-assistant-eero), GL.iNet |
 | DNS filter | [AdGuard Home](https://www.home-assistant.io/integrations/adguard/), [Pi-hole](https://www.home-assistant.io/integrations/pi_hole/) |
 | Speed test | [Speedtest.net](https://www.home-assistant.io/integrations/speedtestdotcom/), [Fast.com](https://www.home-assistant.io/integrations/fastdotcom/) |
-| Reverse proxy | [Nginx Proxy Manager](https://github.com/Teagan42/HomeAssistantNginxProxyManager) and other reverse proxy integrations whose hosts are binary sensors or sensors |
+| Reverse proxy | [Reverse Proxy](https://github.com/juju35/ha-reverse-proxy) (Zoraxy, Traefik, Nginx Proxy Manager: rules, upstream checks, certificates), [Nginx Proxy Manager](https://github.com/Teagan42/HomeAssistantNginxProxyManager) and other reverse proxy integrations whose hosts are binary sensors or sensors |
 | Connected devices | The `device_tracker` entities of any router integration (`source_type: router`) |
 
 Any other switch (SNMP, a generic integration…) can be added in the integration's options: its port entities (`port 1`, `port_2`…) light its front panel.

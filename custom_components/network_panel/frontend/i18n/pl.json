@@ -39,6 +39,13 @@
   "hosts": "Hosty",
   "hosts_ok": "{ok} / {n} OK",
   "in_error": "Z błędem",
+  "proxy_running": "Działa",
+  "proxy_stopped": "Zatrzymany",
+  "rules_active": "Aktywne reguły",
+  "certs_expiring": "Wygasające certyfikaty",
+  "not_checked": "niemonitorowany",
+  "cert_expires": "certyfikat wygasa {when}",
+  "cert_expired": "certyfikat wygasł",
   "wifi_networks": "Sieci Wi-Fi",
   "state_on": "włączona",
   "state_off": "wyłączona",
@@ -58,7 +65,6 @@
   "col_mac": "MAC",
   "col_conn": "Połączenie",
   "col_seen": "Widziane",
-  "col_state": "Stan",
   "wired": "Kabel",
   "no_devices": "Brak jeszcze trackerów urządzeń z routera.",
   "no_match": "Brak wyników.",
@@ -87,6 +93,5 @@
   "empty_switches": "Nie znaleziono przełącznika. Przełączniki są rozpoznawane po modelu; pozostałe można dodać w opcjach integracji.",
   "empty_proxy": "Nie znaleziono hosta.",
   "external_ip": "Zewnętrzny IP",
-  "last_change": "Ostatnia zmiana",
   "open_admin": "Strona administracyjna"
 }
