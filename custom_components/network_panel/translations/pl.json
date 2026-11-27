@@ -1,0 +1,37 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Network Panel",
+        "description": "Dodaje panel Sieć do paska bocznego: router internetowy, routery, przełączniki, Wi-Fi, podłączone urządzenia, filtr DNS, testy prędkości i reverse proxy z poniższych integracji (znaleziono: {count}). Pozostaw wszystkie źródła zaznaczone, aby czytać wszystkie.",
+        "data": {
+          "sources": "Źródła",
+          "switches": "Inne przełączniki"
+        },
+        "data_description": {
+          "sources": "Integracje odczytywane przez panel.",
+          "switches": "Urządzenia pokazywane jako przełączniki oprócz rozpoznanych po modelu (przełącznik, którego porty są encjami)."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Network Panel jest już skonfigurowany."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Network Panel",
+        "description": "Zmień integracje odczytywane przez panel i urządzenia pokazywane jako przełączniki. Ustawienia wyświetlania są w panelu.",
+        "data": {
+          "sources": "Źródła",
+          "switches": "Inne przełączniki"
+        },
+        "data_description": {
+          "sources": "Integracje odczytywane przez panel.",
+          "switches": "Urządzenia pokazywane jako przełączniki oprócz rozpoznanych po modelu (przełącznik, którego porty są encjami)."
+        }
+      }
+    }
+  }
+}

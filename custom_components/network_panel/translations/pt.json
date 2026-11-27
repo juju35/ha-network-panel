@@ -1,0 +1,37 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Network Panel",
+        "description": "Adiciona o painel Rede à barra lateral: a box de internet, routers, switches, Wi-Fi, dispositivos ligados, filtro DNS, testes de velocidade e proxy inverso das integrações abaixo ({count} encontradas). Deixe todas as fontes marcadas para as ler todas.",
+        "data": {
+          "sources": "Fontes",
+          "switches": "Outros switches"
+        },
+        "data_description": {
+          "sources": "Integrações lidas pelo painel.",
+          "switches": "Dispositivos mostrados como switches além dos reconhecidos pelo modelo (um switch cujas portas são entidades)."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "O Network Panel já está configurado."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Network Panel",
+        "description": "Altere as integrações lidas pelo painel e os dispositivos mostrados como switches. As definições de apresentação estão no painel.",
+        "data": {
+          "sources": "Fontes",
+          "switches": "Outros switches"
+        },
+        "data_description": {
+          "sources": "Integrações lidas pelo painel.",
+          "switches": "Dispositivos mostrados como switches além dos reconhecidos pelo modelo (um switch cujas portas são entidades)."
+        }
+      }
+    }
+  }
+}

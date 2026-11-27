@@ -1,0 +1,7 @@
+{
+  "name": "Network Panel",
+  "render_readme": true,
+  "zip_release": true,
+  "filename": "network_panel.zip",
+  "homeassistant": "2026.11.0"
+}

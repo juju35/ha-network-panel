@@ -1,0 +1,37 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Network Panel",
+        "description": "Hozzáadja a Hálózat panelt az oldalsávhoz: az internetes routert, routereket, switcheket, Wi-Fi-t, csatlakoztatott eszközöket, DNS-szűrőt, sebességteszteket és fordított proxyt az alábbi integrációkból ({count} található). Hagyja bejelölve az összes forrást, hogy mindet olvassa.",
+        "data": {
+          "sources": "Források",
+          "switches": "Egyéb switchek"
+        },
+        "data_description": {
+          "sources": "A panel által olvasott integrációk.",
+          "switches": "Switchként megjelenített eszközök a modelljük alapján felismerteken túl (switch, amelynek portjai entitások)."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "A Network Panel már be van állítva."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Network Panel",
+        "description": "Módosítsa a panel által olvasott integrációkat és a switchként megjelenített eszközöket. A megjelenítési beállítások a panelen vannak.",
+        "data": {
+          "sources": "Források",
+          "switches": "Egyéb switchek"
+        },
+        "data_description": {
+          "sources": "A panel által olvasott integrációk.",
+          "switches": "Switchként megjelenített eszközök a modelljük alapján felismerteken túl (switch, amelynek portjai entitások)."
+        }
+      }
+    }
+  }
+}

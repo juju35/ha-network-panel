@@ -1,0 +1,37 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Network Panel",
+        "description": "Lägger till panelen Nätverk i sidofältet: internetboxen, routrar, switchar, Wi-Fi, anslutna enheter, DNS-filter, hastighetstester och omvänd proxy från integrationerna nedan ({count} hittade). Låt alla källor vara markerade för att läsa alla.",
+        "data": {
+          "sources": "Källor",
+          "switches": "Andra switchar"
+        },
+        "data_description": {
+          "sources": "Integrationer som panelen läser.",
+          "switches": "Enheter som visas som switchar utöver de som känns igen på modellen (en switch vars portar är entiteter)."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Network Panel är redan konfigurerad."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Network Panel",
+        "description": "Ändra integrationerna som panelen läser och enheterna som visas som switchar. Visningsinställningarna finns i panelen.",
+        "data": {
+          "sources": "Källor",
+          "switches": "Andra switchar"
+        },
+        "data_description": {
+          "sources": "Integrationer som panelen läser.",
+          "switches": "Enheter som visas som switchar utöver de som känns igen på modellen (en switch vars portar är entiteter)."
+        }
+      }
+    }
+  }
+}

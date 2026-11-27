@@ -1,0 +1,37 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Network Panel",
+        "description": "Tilføjer panelet Netværk til sidebjælken: internetboksen, routere, switche, Wi-Fi, tilsluttede enheder, DNS-filter, hastighedstest og reverse proxy fra integrationerne nedenfor ({count} fundet). Lad alle kilder være valgt for at læse dem alle.",
+        "data": {
+          "sources": "Kilder",
+          "switches": "Andre switche"
+        },
+        "data_description": {
+          "sources": "Integrationer, panelet læser.",
+          "switches": "Enheder vist som switche ud over dem, der genkendes på modellen (en switch, hvis porte er entiteter)."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Network Panel er allerede sat op."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Network Panel",
+        "description": "Skift de integrationer, panelet læser, og de enheder, der vises som switche. Visningsindstillingerne findes i panelet.",
+        "data": {
+          "sources": "Kilder",
+          "switches": "Andre switche"
+        },
+        "data_description": {
+          "sources": "Integrationer, panelet læser.",
+          "switches": "Enheder vist som switche ud over dem, der genkendes på modellen (en switch, hvis porte er entiteter)."
+        }
+      }
+    }
+  }
+}

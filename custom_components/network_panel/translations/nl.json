@@ -1,0 +1,37 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Network Panel",
+        "description": "Voegt het Netwerk-paneel toe aan de zijbalk: de internetbox, routers, switches, wifi, verbonden apparaten, DNS-filter, snelheidstests en reverse proxy van de onderstaande integraties ({count} gevonden). Laat alle bronnen aangevinkt om ze allemaal te lezen.",
+        "data": {
+          "sources": "Bronnen",
+          "switches": "Andere switches"
+        },
+        "data_description": {
+          "sources": "Integraties die het paneel leest.",
+          "switches": "Apparaten die als switch worden getoond naast de aan hun model herkende (een switch waarvan de poorten entiteiten zijn)."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Network Panel is al ingesteld."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Network Panel",
+        "description": "Wijzig de integraties die het paneel leest en de apparaten die als switch worden getoond. De weergave-instellingen staan in het paneel.",
+        "data": {
+          "sources": "Bronnen",
+          "switches": "Andere switches"
+        },
+        "data_description": {
+          "sources": "Integraties die het paneel leest.",
+          "switches": "Apparaten die als switch worden getoond naast de aan hun model herkende (een switch waarvan de poorten entiteiten zijn)."
+        }
+      }
+    }
+  }
+}
