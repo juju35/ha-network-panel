@@ -197,6 +197,23 @@ def _first(entities: list[er.RegistryEntry], domain: str, slots: dict[str, re.Pa
     return found
 
 
+def _box_id(entry_devices: list[dr.DeviceEntry], device_entities: Any) -> str | None:
+    """The box among a box integration's devices: not behind another of its devices (the hosts it tracks are, and
+    their device can carry another integration's name), with more than presence trackers, the most entities first."""
+    ids = {d.id for d in entry_devices}
+    best: tuple[int, int, str] | None = None
+    for device in entry_devices:
+        if device.entry_type is dr.DeviceEntryType.SERVICE:
+            continue
+        own = device_entities(device.id)
+        if not own or all(e.domain == "device_tracker" for e in own):
+            continue
+        rank = (0 if device.via_device_id in ids else 1, len(own), device.id)
+        if best is None or rank > best:
+            best = rank
+    return best[2] if best else None
+
+
 @callback
 def async_inventory(hass: HomeAssistant) -> Inventory:
     """Scan the registries for the sources chosen in the options (every supported one when none is chosen)."""
@@ -209,8 +226,13 @@ def async_inventory(hass: HomeAssistant) -> Inventory:
     inv = Inventory()
     seen: set[str] = set()
 
-    def device_entities(device_id: str) -> list[er.RegistryEntry]:
-        return [e for e in er.async_entries_for_device(entities, device_id) if not e.disabled_by]
+    def device_entities(device_id: str, entry_id: str | None = None) -> list[er.RegistryEntry]:
+        """A device's enabled entities; with entry_id, only that entry's (a device can be shared by integrations)."""
+        return [
+            e
+            for e in er.async_entries_for_device(entities, device_id)
+            if not e.disabled_by and (entry_id is None or e.config_entry_id == entry_id)
+        ]
 
     for platform in SOURCE_PLATFORMS:
         if platform not in chosen:
@@ -248,14 +270,23 @@ def async_inventory(hass: HomeAssistant) -> Inventory:
                 if inv.proxy is None:
                     inv.proxy = {"platform": platform, "title": entry.title, "hosts": hosts}
                 continue
-            for device in dr.async_entries_for_config_entry(devices, entry.entry_id):
+            entry_devices = dr.async_entries_for_config_entry(devices, entry.entry_id)
+            box_id = (
+                _box_id(entry_devices, lambda d, eid=entry.entry_id: device_entities(d, eid))
+                if platform in BOX_PLATFORMS
+                else None
+            )
+            for device in entry_devices:
                 if device.id in seen or device.entry_type is dr.DeviceEntryType.SERVICE:
                     continue
-                own = device_entities(device.id)
+                own = device_entities(device.id, entry.entry_id)
                 if not own and not SWITCH_RE.search(device.model or ""):
                     continue
-                seen.add(device.id)
                 item = _device(platform, device, own, switches)
+                # A box integration also tracks the hosts of the network (a NAS, a phone…): only the box itself
+                if item.kind == "box" and device.id != box_id:
+                    continue
+                seen.add(device.id)
                 if item.kind == "box" and inv.box is None:
                     inv.box = asdict(item)
                 elif item.kind == "switch":
@@ -270,7 +301,11 @@ def async_inventory(hass: HomeAssistant) -> Inventory:
     for device_id in switches - seen:
         if (device := devices.async_get(device_id)) is None:
             continue
-        entry_id = device.config_entry_id
+        entry_id = (
+            device.config_entry_id
+            if hasattr(type(device), "config_entry_id")
+            else next(iter(device.config_entries), None)
+        )
         entry = hass.config_entries.async_get_entry(entry_id) if entry_id else None
         item = _device(entry.domain if entry else "", device, device_entities(device_id), switches)
         inv.switches.append(asdict(item))

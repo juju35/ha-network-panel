@@ -46,6 +46,9 @@ test("port, proxy host and router states", () => {
   assert.equal(lib.networkPortState({ state: "on" }), "up");
   assert.equal(lib.networkPortState({ state: "off" }), "down");
   assert.equal(lib.networkPortState({ state: "1000" }), "up");
+  // SNMP ifOperStatus: 1 up, 2 down
+  assert.equal(lib.networkPortState({ state: "1" }), "up");
+  assert.equal(lib.networkPortState({ state: "2" }), "down");
   assert.equal(lib.networkPortState({ state: "unavailable" }), "unknown");
   assert.equal(lib.networkPortState(undefined), "unknown");
   assert.equal(lib.networkHostState({ state: "200" }), "ok");
@@ -199,4 +202,20 @@ test("an empty network says what to add", () => {
   p._inv = { box: null, routers: [], switches: [], wifi: [], dns: null, speed: null, proxy: null, sources: [], settings: {} };
   p._render(true);
   assert.match(p.shadowRoot.innerHTML, /No network integration/);
+});
+
+test("ports of a switch without port entities are found by its name (SNMP sensors in YAML)", () => {
+  const st = (state) => ({ state, attributes: {} });
+  const states = {
+    "sensor.switch_sejour_port_2_status": st("2"),
+    "sensor.switch_sejour_port_1_in": st("12345"),
+    "sensor.switch_sejour_port_1_status": st("1"),
+    "sensor.switch_parents_port_1_status": st("1"),
+  };
+  const ports = lib.networkPortsByName(states, "Switch Séjour");
+  assert.deepEqual(ports.map((p) => [p.n, p.entity]), [
+    [1, "sensor.switch_sejour_port_1_status"],
+    [2, "sensor.switch_sejour_port_2_status"],
+  ]);
+  assert.deepEqual(lib.networkPortsByName(states, ""), []);
 });

@@ -13,9 +13,34 @@ export const NETWORK_PORT_COLORS = {
 export const networkPortState = (st) => {
   if (!st || st.state === "unavailable" || st.state === "unknown") return "unknown";
   if (st.state === "on" || st.state === "connected" || st.state === "up") return "up";
+  // SNMP ifOperStatus: 1 up, 2 down, 3 testing… 7 lower layer down; a link speed (10, 100, 1000…): up; 0: down
   const n = Number(st.state);
-  if (Number.isFinite(n)) return n > 0 ? "up" : "down";
+  if (Number.isFinite(n)) return n === 1 || n >= 10 ? "up" : "down";
   return "down";
+};
+
+/**
+ * Port entities of a switch whose ports have no device (SNMP sensors set up in YAML): `sensor.<switch name>_port_<n>`
+ * (a status or link entity first, then any other), one per port in port order. `states`: hass.states.
+ */
+export const networkPortsByName = (states, name) => {
+  const slug = String(name || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+  if (!slug) return [];
+  const re = new RegExp(`^(sensor|binary_sensor)\\.${slug}_port_?(\\d{1,2})(_.*)?$`);
+  const ports = new Map();
+  for (const id of Object.keys(states || {})) {
+    const m = re.exec(id);
+    if (!m) continue;
+    const rank = /status|link|oper|state/.test(m[3] || "") || !m[3] ? 0 : m[1] === "binary_sensor" ? 1 : 2;
+    const n = Number(m[2]);
+    if (!ports.has(n) || rank < ports.get(n).rank) ports.set(n, { n, entity: id, label: states[id].attributes?.friendly_name || "", rank });
+  }
+  return [...ports.values()].sort((a, b) => a.n - b.n).map(({ rank, ...p }) => p);
 };
 
 /**

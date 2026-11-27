@@ -92,6 +92,36 @@ async def test_box_switch_and_access_point(hass: HomeAssistant):
     assert {s["platform"] for s in inv.sources} == {"freebox", "unifi"}
 
 
+async def test_box_not_taken_from_a_tracked_host(hass: HomeAssistant):
+    """The Freebox tracks the hosts of the network: a NAS sharing its device with its own integration (more entities,
+    listed first) stays a host, the box is the device the hosts hang from."""
+    nas_entry = _entry(hass, "ugreen", "UGREEN NAS")
+    box_entry = _entry(hass, "freebox", "Freebox")
+    reg = dr.async_get(hass)
+    nas = reg.async_get_or_create(
+        config_entry_id=nas_entry.entry_id,
+        identifiers={("ugreen", "nas")},
+        connections={(dr.CONNECTION_NETWORK_MAC, "aa:bb:cc:dd:ee:ff")},
+        name="UGREEN DXP480T Plus",
+        model="UGREEN DXP480T Plus",
+    )
+    for key in ("cpu", "ram", "temperature", "pool_1_total_size"):
+        _entity(hass, nas_entry, nas, "sensor", f"nas_{key}")
+    box = _device(hass, box_entry, "box", "Freebox v9 (r1)", "Freebox v9 (r1)", "Freebox SAS")
+    reg.async_get_or_create(
+        config_entry_id=box_entry.entry_id,
+        connections={(dr.CONNECTION_NETWORK_MAC, "aa:bb:cc:dd:ee:ff")},
+        via_device=("freebox", "box"),
+    )
+    _entity(hass, box_entry, nas, "device_tracker", "nas_tracker")
+    wan = _entity(hass, box_entry, box, "binary_sensor", "freebox_wan_status", device_class="connectivity")
+
+    inv = async_inventory(hass)
+    assert inv.box["name"] == "Freebox v9 (r1)"
+    assert inv.box["entities"]["wan"] == wan
+    assert not inv.routers and not inv.switches
+
+
 async def test_dns_speed_and_proxy(hass: HomeAssistant):
     adguard = _entry(hass, "adguard", "AdGuard Home")
     dev = _device(hass, adguard, "adg", "AdGuard Home")

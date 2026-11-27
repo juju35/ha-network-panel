@@ -11,7 +11,7 @@
  * English is built in; the other languages are loaded on demand from /network_panel/i18n/<lang>.json.
  */
 
-export const NETWORK_PANEL_VERSION = "1.0.0";
+export const NETWORK_PANEL_VERSION = "1.0.1";
 export const NETWORK_TABS = ["overview", "devices", "wifi", "dns", "speed", "proxy", "settings"];
 // Tabs shown only when their source is there (the inventory key that brings them)
 export const NETWORK_TAB_SOURCE = { dns: "dns", speed: "speed", proxy: "proxy" };
