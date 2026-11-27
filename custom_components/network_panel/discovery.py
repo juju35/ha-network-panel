@@ -270,7 +270,7 @@ def async_inventory(hass: HomeAssistant) -> Inventory:
     for device_id in switches - seen:
         if (device := devices.async_get(device_id)) is None:
             continue
-        entry_id = next(iter(device.config_entries), "")
+        entry_id = device.config_entry_id
         entry = hass.config_entries.async_get_entry(entry_id) if entry_id else None
         item = _device(entry.domain if entry else "", device, device_entities(device_id), switches)
         inv.switches.append(asdict(item))
