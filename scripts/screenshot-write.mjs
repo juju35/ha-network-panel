@@ -2,8 +2,8 @@
 // zlib, another Chromium build) or rasterizer noise must not show up as a changed screenshot in a pull request.
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 
 // Debian 12's ffmpeg (5.1) cannot read a GIF from a pipe (its demuxer seeks back): decode a temporary copy instead.
 const viaFile = (buf, fn) => {
@@ -64,6 +64,7 @@ export const writeIfChanged = (path, data, pixels = ffmpegPixels) => {
     const [a, b] = [imageSize(old), imageSize(data)];
     if (a && b && a[0] === b[0] && a[1] === b[1] && samePixels(pixels(old), pixels(data))) return false;
   }
+  mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, data);
   return true;
 };
