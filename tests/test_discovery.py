@@ -108,11 +108,10 @@ async def test_box_not_taken_from_a_tracked_host(hass: HomeAssistant):
     for key in ("cpu", "ram", "temperature", "pool_1_total_size"):
         _entity(hass, nas_entry, nas, "sensor", f"nas_{key}")
     box = _device(hass, box_entry, "box", "Freebox v9 (r1)", "Freebox v9 (r1)", "Freebox SAS")
-    reg.async_get_or_create(
-        config_entry_id=box_entry.entry_id,
-        connections={(dr.CONNECTION_NETWORK_MAC, "aa:bb:cc:dd:ee:ff")},
-        via_device=("freebox", "box"),
+    host = reg.async_get_or_create(
+        config_entry_id=box_entry.entry_id, connections={(dr.CONNECTION_NETWORK_MAC, "aa:bb:cc:dd:ee:ff")}
     )
+    reg.async_update_device(host.id, via_device_id=box.id)
     _entity(hass, box_entry, nas, "device_tracker", "nas_tracker")
     wan = _entity(hass, box_entry, box, "binary_sensor", "freebox_wan_status", device_class="connectivity")
 
