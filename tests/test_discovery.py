@@ -273,3 +273,22 @@ async def test_what_the_cards_show(hass: HomeAssistant):
     assert inv.dns["updates"] == [dns_update]
     assert inv.proxy["hosts"] == [{"id": "a_example_org", "problem": True, "upstream": up, "renew": renew}]
     assert inv.proxy["controls"] == [redirect, dev_mode]
+
+
+async def test_slots_take_whole_words_and_skip_ports(hass: HomeAssistant):
+    """A download counter is no CPU load, a program no memory, a port's PoE switch no power switch of the device."""
+    unifi = _entry(hass, "unifi", "Home network")
+    sw = _device(hass, unifi, "sw", "Office switch", "USW Lite 8 PoE")
+    _entity(hass, unifi, sw, "sensor", "office_switch_total_download")
+    _entity(hass, unifi, sw, "sensor", "office_switch_led_program")
+    _entity(hass, unifi, sw, "switch", "office_switch_port_3_power")
+    _entity(hass, unifi, sw, "sensor", "office_switch_fan_temperature", device_class="temperature")
+    load = _entity(hass, unifi, sw, "sensor", "office_switch_system_load")
+    ram = _entity(hass, unifi, sw, "sensor", "office_switch_memory_utilization")
+    fan = _entity(hass, unifi, sw, "sensor", "office_switch_fan_level")
+
+    e = async_inventory(hass).switches[0]
+    assert e["entities"]["cpu"] == load
+    assert e["entities"]["ram"] == ram
+    assert "power" not in e["entities"]
+    assert e["fans"] == [fan]

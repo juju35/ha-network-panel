@@ -68,8 +68,9 @@ SLOTS: dict[str, tuple[str, str | None, re.Pattern[str]]] = {
     ),
     "missed_calls": ("sensor", None, re.compile(r"missed", re.IGNORECASE)),
     "mark_calls": ("button", None, re.compile(r"missed|mark_.*read|calls", re.IGNORECASE)),
-    "cpu": ("sensor", "-temperature", re.compile(r"cpu|processor|load", re.IGNORECASE)),
-    "ram": ("sensor", "-temperature", re.compile(r"mem|ram\b|ram_", re.IGNORECASE)),
+    # Whole words only: "load" is not "download", "ram" is not "program"
+    "cpu": ("sensor", "-temperature", re.compile(r"cpu|processor|(?:^|_)(?:system_)?load(?:_|$)", re.IGNORECASE)),
+    "ram": ("sensor", "-temperature", re.compile(r"memory|(?:^|_)(?:mem|ram)(?:_|$)", re.IGNORECASE)),
     "disk": ("sensor", "-temperature", re.compile(r"disk|storage|partition|hdd", re.IGNORECASE)),
     "update": ("update", None, re.compile(r".", re.IGNORECASE)),
     "power": ("switch", None, re.compile(r"^power$|_power$|^power_|poe_?all|device_power", re.IGNORECASE)),
@@ -150,6 +151,8 @@ def _match(entry: er.RegistryEntry, pattern: re.Pattern[str]) -> bool:
 def _slots(entities: list[er.RegistryEntry]) -> dict[str, str]:
     """The first entity of each slot (translation key first, then entity id)."""
     found: dict[str, str] = {}
+    # A port's own entities (its PoE switch, its counters) are never the device's
+    entities = [e for e in entities if not (PORT_RE.search(_key(e)) or PORT_RE.search(_object_id(e)))]
     for slot, (domain, device_class, pattern) in SLOTS.items():
         # A device class "-x" keeps every class but x (a CPU load, not the CPU temperature)
         if device_class and device_class.startswith("-"):
@@ -220,7 +223,13 @@ def _device(platform: str, device: dr.DeviceEntry, entities: list[er.RegistryEnt
         ],
         ports=_ports(entities) if kind == "switch" else [],
         temps=[e.entity_id for e in entities if e.domain == "sensor" and _class(e) == "temperature"],
-        fans=[e.entity_id for e in entities if e.domain == "sensor" and FAN_RE.search(_key(e) or _object_id(e))],
+        fans=[
+            e.entity_id
+            for e in entities
+            if e.domain == "sensor"
+            and _class(e) != "temperature"
+            and (FAN_RE.search(_key(e)) or FAN_RE.search(_object_id(e)))
+        ],
     )
 
 

@@ -74,11 +74,6 @@ Object.assign(NetworkPanel.prototype, {
     return networkBits(this._st(id));
   },
 
-  _temp(id) {
-    const v = networkValue(this._st(id));
-    return v === null ? null : v;
-  },
-
   /** The entities whose last 24 hours the tiles draw. */
   _histIds() {
     const inv = this._inv;
@@ -139,7 +134,7 @@ Object.assign(NetworkPanel.prototype, {
       const ip = this._text(box.entities.ip);
       const conn = this._text(box.entities.connection);
       nodes.push(this._pnode(`<span class="globe${online === false ? " down" : ""}">${networkIcon("web")}</span>`, this._t("internet"), [[conn.toUpperCase(), ip].filter(Boolean).join(" · "), up !== null ? this._t("online_since", { time: networkDuration(lang, up) }) : ""], online === false ? "bad" : "ok", this._t(online === false ? "offline" : "online"), "internet"));
-      const temp = this._temp(box.entities.temperature ?? box.temps?.[0]);
+      const temp = networkValue(this._st(box.entities.temperature ?? box.temps?.[0]));
       const wifiOn = box.wifi.some((id) => networkOn(this._st(id)));
       nodes.push(this._pnode(`<img src="${networkEsc(networkBoxPicture(box))}" alt="">`, networkBoxModel(box)?.name || box.name, [this._t("down_up", { down: networkRate(lang, this._rate(box.entities.rate_down)), up: networkRate(lang, this._rate(box.entities.rate_up)) }), [temp !== null ? `${networkNum(lang, temp, 0)} °C` : "", box.wifi.length ? `${this._t("wifi")} ${this._t(wifiOn ? "state_on" : "state_off")}` : ""].filter(Boolean).join(" · ")], online === false ? "bad" : "ok", this._t(online === false ? "offline" : "healthy"), "internet"));
     }
@@ -283,7 +278,7 @@ Object.assign(NetworkPanel.prototype, {
     const last = this._speedLast();
     if (last && last.down !== null) tiles.push(this._gauge(this._inv.speed.entities.download, this._t("last_test"), `${networkRate(lang, last.down)}${last.up !== null ? ` / ${networkRate(lang, last.up)}` : ""}`, "", null, last.ping !== null ? `${this._t("ping")} ${networkNum(lang, last.ping, 0)} ms` : ""));
     for (const id of box.temps || []) {
-      const v = this._temp(id);
+      const v = networkValue(this._st(id));
       if (v !== null) tiles.push(this._gauge(id, networkName(this._st(id)).replace(box.name, "").trim() || this._t("temperature"), `${networkNum(lang, v, 0)} °C`, NETWORK_LEVEL(v, 65, 80), 100));
     }
     for (const id of box.fans || []) {
@@ -316,24 +311,37 @@ Object.assign(NetworkPanel.prototype, {
     const names = named.length ? `<div class="chips pnames">${named.map((p) => this._chip(`${p.label} · ${p.title}`, p.state === "up" ? "ok" : p.state === "down" ? "bad" : "")).join("")}</div>` : "";
     const tiles = [
       `<div class="g ${watched ? "warn" : ""}"><span class="gl">${networkEsc(this._t("ports_up"))}</span><b>${ports.length ? `${active} / ${ports.length}` : "—"}</b>${watched ? `<span class="gl">${networkEsc(this._watchedLabel(ports, watched))}</span>` : ""}</div>`,
-      this._rate(e.rate_down) !== null || e.rx_total ? this._gauge(e.rate_down || e.rx_total, `↓ ${this._t("received")}`, this._rate(e.rate_down) !== null ? networkRate(lang, this._rate(e.rate_down)) : `${networkValue(this._st(e.rx_total))} ${this._st(e.rx_total)?.attributes?.unit_of_measurement || ""}`) : "",
-      this._rate(e.rate_up) !== null || e.tx_total ? this._gauge(e.rate_up || e.tx_total, `↑ ${this._t("sent")}`, this._rate(e.rate_up) !== null ? networkRate(lang, this._rate(e.rate_up)) : `${networkValue(this._st(e.tx_total))} ${this._st(e.tx_total)?.attributes?.unit_of_measurement || ""}`) : "",
+      this._traffic(e.rate_down, e.rx_total, `↓ ${this._t("received")}`),
+      this._traffic(e.rate_up, e.tx_total, `↑ ${this._t("sent")}`),
     ].join("");
     const power = this._st(e.power) ? `<div class="r" style="margin-top:10px"><span class="s m">${networkEsc(this._t("power"))}</span>${this._toggleSw(e.power, sw.name)}</div>` : "";
     return `<div class="c swc"><div class="h"><span>${networkEsc(sw.name)}</span><span class="s m">${networkEsc([sw.model, up !== null ? this._t("online_since", { time: networkDuration(lang, up) }) : ""].filter(Boolean).join(" · "))}</span></div>${networkChassisSvg(ports, `tab${i}`)}${names}<div class="gs">${tiles}</div>${power}</div>`;
   },
 
+  /** A switch's traffic: its rate, else its byte counter; nothing when neither reads. */
+  _traffic(rate, total, label) {
+    const bits = this._rate(rate);
+    if (bits !== null) return this._gauge(rate, label, networkRate(this._lang, bits));
+    const v = networkValue(this._st(total));
+    return v === null ? "" : this._gauge(total, label, `${networkNum(this._lang, v)} ${this._st(total).attributes?.unit_of_measurement || ""}`.trim());
+  },
+
   _apCard(r) {
     const lang = this._lang;
     const e = r.entities;
+    // Offline when none of its entities reads
+    const online = Object.values(e).some((id) => {
+      const st = this._st(id);
+      return st && st.state !== "unavailable";
+    });
     const clients = networkValue(this._st(e.clients));
     const u = this._st(e.update);
     const up = networkUptime(this._st(e.uptime), this._now());
     const cpu = networkValue(this._st(e.cpu));
     const ram = networkValue(this._st(e.ram));
-    const temp = this._temp(e.temperature);
+    const temp = networkValue(this._st(e.temperature));
     const chips = [
-      this._chip(this._t("online"), "ok"),
+      this._chip(this._t(online ? "online" : "offline"), online ? "ok" : "bad"),
       u?.state === "on" ? this._chip(this._t("firmware_update", { v: u.attributes?.latest_version || "" }), "warn") : "",
       clients !== null ? this._chip(this._t("clients_n", { n: networkNum(lang, clients) })) : "",
       up !== null ? this._chip(this._t("online_since", { time: networkDuration(lang, up) })) : "",
@@ -470,10 +478,11 @@ Object.assign(NetworkPanel.prototype, {
     const strip = names.length > 1 && names.every((n) => n.startsWith(`${first} `));
     const controls = ids.map((id, i) => `<div class="arow"><span class="grow">${networkEsc(strip ? names[i].slice(first.length + 1) : names[i])}</span>${this._toggleSw(id)}</div>`).join("");
     const rules = this._st(px.summary?.rules)?.attributes?.rules;
+    const hosts = new Map(this._proxyHosts().map((h) => [h.name, h]));
     const ruleRows = Array.isArray(rules)
       ? rules
           .map((r) => {
-            const host = this._proxyHosts().find((h) => h.name === r.domain);
+            const host = hosts.get(r.domain);
             const cls = host?.state === "bad" ? "bad" : r.enabled ? "ok" : "";
             return `<div class="arow ${cls === "bad" ? "bad" : ""}"><span class="d ${cls}"></span><span class="grow">${networkEsc(r.domain)}<span class="s m"> → ${networkEsc(r.target || "")}</span></span><button class="tg${r.enabled ? " on" : ""}" role="switch" aria-checked="${!!r.enabled}" aria-label="${networkEsc(r.domain)}" data-act="rule" data-arg="${networkEsc(r.domain)}" data-on="${r.enabled ? "0" : "1"}"></button></div>`;
           })

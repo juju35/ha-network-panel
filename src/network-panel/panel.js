@@ -256,7 +256,13 @@ export class NetworkPanel extends HTMLElement {
         this._ask = { act, id: arg, text: this._t(act === "install" ? "confirm_install" : "confirm_press", { name }) };
         this._render(true);
       } else this._do(act, arg);
-    } else if (act === "rule") this._do("rule", arg, on === "1");
+    } else if (act === "rule") {
+      // Turning a rule off cuts its site: asked first, like a switch
+      if (on !== "1" && this._inv?.settings?.confirm_actions !== false) {
+        this._ask = { act: "rule", id: arg, on: false, text: this._t("confirm_off", { name: arg }) };
+        this._render(true);
+      } else this._do("rule", arg, on === "1");
+    }
     else if (act === "more") this.dispatchEvent(new CustomEvent("hass-more-info", { bubbles: true, composed: true, detail: { entityId: arg } }));
     else if (act === "options") this._navigate("/config/integrations/integration/network_panel");
     else if (act === "integrations") this._navigate("/config/integrations/dashboard");
@@ -294,7 +300,10 @@ export class NetworkPanel extends HTMLElement {
     };
     add(inv.box?.entities);
     for (const r of inv.routers) add(r.entities);
-    for (const s of inv.switches) for (const p of this._portsOf(s)) ids.push(p.entity);
+    for (const s of inv.switches) {
+      add(s.entities);
+      for (const p of this._portsOf(s)) ids.push(p.entity);
+    }
     ids.push(...inv.wifi);
     add(inv.dns?.entities);
     ids.push(...(inv.dns?.switches || []), ...(inv.dns?.details || []), ...(inv.dns?.updates || []));

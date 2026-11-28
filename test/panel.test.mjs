@@ -318,3 +318,29 @@ test("the sparkline draws the last 24 hours only", () => {
   assert.match(svg, /<polyline/);
   assert.doesNotMatch(svg, /NaN/);
 });
+
+test("turning a proxy rule off asks first", () => {
+  const calls = [];
+  const p = panel(calls);
+  p._onClick({ composedPath: () => [{ dataset: { act: "rule", arg: "home.example.org", on: "0" } }] });
+  assert.equal(calls.length, 0);
+  assert.match(p._askHtml(), /Turn off home\.example\.org\?/);
+  p._onClick({ composedPath: () => [{ dataset: { act: "confirm" } }] });
+  assert.deepEqual(calls, [["reverse_proxy", "toggle_proxy_rule", { domain: "home.example.org", enable: false }]]);
+});
+
+test("an access point whose entities are all unavailable reads offline", () => {
+  const off = Object.fromEntries(Object.entries(states).map(([id, s]) => [id, id.includes("upstairs_ap") ? { ...s, state: "unavailable" } : s]));
+  const p = panel([], { states: off });
+  const html = p._apCard(p._inv.routers[1]);
+  assert.match(html, /chip bad">offline/);
+  assert.match(p._apCard(p._inv.routers[0]), /chip ok">online/);
+});
+
+test("a switch's own entities are part of what re-renders", () => {
+  const p = panel();
+  assert.match(p._signature(), new RegExp(states["sensor.office_switch_rx"].last_updated.replace(/[.]/g, "\\.")));
+  const before = p._signature();
+  p._hass = { ...p._hass, states: { ...states, "switch.office_switch_poe": { ...states["switch.office_switch_poe"], state: "off", last_updated: "2026-03-12T18:31:00Z" } } };
+  assert.notEqual(p._signature(), before);
+});
