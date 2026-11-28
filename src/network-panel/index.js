@@ -8,9 +8,11 @@ import "./scene.js";
 import "./dns-art.js";
 import "./styles.js";
 import "./panel.js";
+import "./rich.js";
 // The assembled module's own exports (the other `export`s only join the modules)
 export { NETWORK_LANGS, NETWORK_PANEL_EN, NETWORK_PANEL_VERSION, NETWORK_TABS, networkBits, networkDuration, networkEsc, networkRate, networkT } from "./core.js";
 export { networkBoxModel, networkRouterKind } from "./models.js";
 export { networkDailyPeaks, networkHostState, networkHttp, networkProxyHostState, networkTrackers, NetworkPanel } from "./panel.js";
+export { networkLinkOf, networkSpark } from "./rich.js";
 export { networkSceneSvg } from "./scene.js";
 export { networkChassisSvg, networkPortState, networkPortsByName } from "./switch.js";

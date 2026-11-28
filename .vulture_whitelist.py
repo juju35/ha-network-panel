@@ -8,3 +8,5 @@ _.async_step_user  # unused method (custom_components/network_panel/config_flow.
 _.async_get_options_flow  # unused method (custom_components/network_panel/config_flow.py)
 _.async_step_init  # unused method (custom_components/network_panel/config_flow.py)
 url  # unused variable (custom_components/network_panel/discovery.py): Device field, sent through asdict
+temps  # unused variable (custom_components/network_panel/discovery.py): Device field, sent through asdict
+fans  # unused variable (custom_components/network_panel/discovery.py): Device field, sent through asdict

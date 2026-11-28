@@ -209,3 +209,67 @@ async def test_reverse_proxy_hosts_by_rule_domain(hass: HomeAssistant):
         {"id": "a_example_org", "problem": True, "upstream": up_a, "cert": cert_a, "expiring": exp_a},
         {"id": "b_example_org", "problem": True, "upstream": up_b},
     ]
+
+
+async def test_what_the_cards_show(hass: HomeAssistant):
+    """Besides the rates: connection, calls, temperatures, fans, gauges, update, named ports, DNS and proxy extras."""
+    box_entry = _entry(hass, "freebox", "Freebox Server")
+    box = _device(hass, box_entry, "box", "Freebox Server", "Freebox v9 (r1)")
+    conn = _entity(hass, box_entry, box, "sensor", "freebox_connection_type")
+    missed = _entity(hass, box_entry, box, "sensor", "freebox_missed_calls", key="missed")
+    mark = _entity(hass, box_entry, box, "button", "freebox_mark_calls_as_read", key="mark_calls_as_read")
+    reboot = _entity(hass, box_entry, box, "button", "freebox_restart", device_class="restart")
+    temp = _entity(hass, box_entry, box, "sensor", "freebox_cpu_temperature", device_class="temperature")
+    fan = _entity(hass, box_entry, box, "sensor", "freebox_fan_speed", key="fan_speed")
+
+    unifi = _entry(hass, "unifi", "Home network")
+    ap = _device(hass, unifi, "ap", "Upstairs AP", "U6 Pro")
+    cpu = _entity(hass, unifi, ap, "sensor", "upstairs_ap_cpu_utilization")
+    ram = _entity(hass, unifi, ap, "sensor", "upstairs_ap_memory_utilization")
+    update = _entity(hass, unifi, ap, "update", "upstairs_ap")
+    sw = _device(hass, unifi, "sw", "Office switch", "USW Lite 8 PoE")
+    _entity(hass, unifi, sw, "binary_sensor", "office_switch_port_1", name="Port 1")
+    p2 = _entity(hass, unifi, sw, "binary_sensor", "office_switch_port_2", name="Port 2")
+    er.async_get(hass).async_update_entity(p2, name="NAS")
+
+    adguard = _entry(hass, "adguard", "AdGuard Home")
+    adev = _device(hass, adguard, "adg", "AdGuard Home")
+    _entity(hass, adguard, adev, "sensor", "adguard_home_dns_queries", key="dns_queries")
+    rules = _entity(hass, adguard, adev, "sensor", "adguard_home_rules_count", key="rules_count")
+    refresh = _entity(hass, adguard, adev, "button", "adguard_home_refresh_filters")
+    dns_update = _entity(hass, adguard, adev, "update", "adguard_home")
+
+    proxy = _entry(hass, "reverse_proxy", "Zoraxy")
+    pdev = _device(hass, proxy, "zoraxy", "Zoraxy")
+    reg = er.async_get(hass)
+
+    def add(domain, key, uid):
+        return reg.async_get_or_create(
+            domain,
+            "reverse_proxy",
+            f"{proxy.entry_id}_{uid}",
+            config_entry=proxy,
+            device_id=pdev.id,
+            translation_key=key,
+        ).entity_id
+
+    up = add("binary_sensor", "upstream_problem", "upstream_problem_a_example_org")
+    renew = add("button", "renew", "renew_a_example_org")
+    redirect = add("switch", "https_redirect", "https_redirect")
+    dev_mode = add("switch", "development_mode", "development_mode")
+
+    inv = async_inventory(hass)
+    e = inv.box["entities"]
+    assert (e["connection"], e["missed_calls"], e["mark_calls"], e["reboot"]) == (conn, missed, mark, reboot)
+    assert inv.box["temps"] == [temp]
+    assert inv.box["fans"] == [fan]
+    # A CPU load, not the CPU temperature
+    assert "cpu" not in e
+    r = inv.routers[0]["entities"]
+    assert (r["cpu"], r["ram"], r["update"]) == (cpu, ram, update)
+    assert [(p["n"], p["named"]) for p in inv.switches[0]["ports"]] == [(1, False), (2, True)]
+    assert rules in inv.dns["details"]
+    assert inv.dns["buttons"] == [refresh]
+    assert inv.dns["updates"] == [dns_update]
+    assert inv.proxy["hosts"] == [{"id": "a_example_org", "problem": True, "upstream": up, "renew": renew}]
+    assert inv.proxy["controls"] == [redirect, dev_mode]

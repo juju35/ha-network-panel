@@ -7,18 +7,19 @@
  * Wi-Fi networks, the devices connected (router device trackers), the DNS filter (AdGuard Home, Pi-hole), the speed
  * tests (Speedtest.net, Fast.com) and a reverse proxy. It reads the states of their entities and acts through their
  * switches and buttons; the integration's own command (network_panel/inventory) only says which entity is which.
- * The cards' illustrated header as its top bar, then seven tabs: Overview, Devices, Wi-Fi, DNS, Speed, Proxy, Settings.
+ * The cards' illustrated header as its top bar, then eight tabs: Overview, Internet, Devices, Wi-Fi, DNS, Speed, Proxy, Settings.
  * English is built in; the other languages are loaded on demand from /network_panel/i18n/<lang>.json.
  */
 
-export const NETWORK_PANEL_VERSION = "1.0.2";
-export const NETWORK_TABS = ["overview", "devices", "wifi", "dns", "speed", "proxy", "settings"];
+export const NETWORK_PANEL_VERSION = "1.1.0";
+export const NETWORK_TABS = ["overview", "internet", "devices", "wifi", "dns", "speed", "proxy", "settings"];
 // Tabs shown only when their source is there (the inventory key that brings them)
-export const NETWORK_TAB_SOURCE = { dns: "dns", speed: "speed", proxy: "proxy" };
+export const NETWORK_TAB_SOURCE = { internet: "box", dns: "dns", speed: "speed", proxy: "proxy" };
 
 export const NETWORK_PANEL_EN = {
   title: "Network",
   tab_overview: "Overview",
+  tab_internet: "Internet",
   tab_devices: "Devices",
   tab_wifi: "Wi-Fi & switches",
   tab_dns: "DNS",
@@ -42,16 +43,12 @@ export const NETWORK_PANEL_EN = {
   offline: "offline",
   down_up: "↓ {down} · ↑ {up}",
   ports_active: "{n} ports · {active} active",
-  wifi_devices: "Wi-Fi · {n} devices",
-  wifi_on: "{on} / {n} Wi-Fi networks on",
-  speed_7d: "Speed · 7 days",
   speed_30d: "{name} · 30 days",
   last_test: "Last test",
   download: "Download",
   upload: "Upload",
   ping: "Ping",
   run_test: "Run a test",
-  right_now: "Right now",
   no_test: "No test yet.",
   proxy: "Reverse proxy",
   hosts: "Hosts",
@@ -68,7 +65,6 @@ export const NETWORK_PANEL_EN = {
   state_on: "on",
   state_off: "off",
   turn_on: "Turn on",
-  turn_off: "Turn off",
   confirm_off: "Turn off {name}?",
   confirm: "Confirm",
   cancel: "Cancel",
@@ -94,10 +90,7 @@ export const NETWORK_PANEL_EN = {
   blocked: "Blocked",
   ratio: "Blocked ratio",
   avg_time: "Average time",
-  protections: "Protections",
-  access_points: "Routers and access points",
   clients_n: "{n} devices",
-  switches: "Switches",
   port_n: "Port {n}",
   sources: "Sources",
   loaded: "connected",
@@ -106,12 +99,59 @@ export const NETWORK_PANEL_EN = {
   options: "Options",
   display: "Display",
   set_show_away: "Show away devices",
-  set_confirm: "Ask before turning a Wi-Fi network or a protection off",
+  set_confirm: "Ask before turning something off, restarting or installing an update",
   empty_wifi: "No Wi-Fi switch found.",
-  empty_switches: "No switch found. Switches are recognised by their model; others can be added in the integration's options.",
   empty_proxy: "No host found.",
-  external_ip: "External IP",
   open_admin: "Admin page",
+  watched_down: "{n} named ports down",
+  healthy: "healthy",
+  update_available: "update available",
+  port_down: "{port} down",
+  upstream_down: "upstream offline",
+  cert_soon: "certificate expiring soon",
+  renew: "Renew",
+  firmware: "firmware",
+  firmware_update: "update {v} available",
+  install: "Install",
+  confirm_install: "Install the update of {name}?",
+  confirm_press: "Run {name}?",
+  missed_n: "{n} missed calls",
+  missed_calls: "Missed calls",
+  mark_read: "Mark as read",
+  needs_attention: "Needs attention",
+  all_good: "Nothing to do, all is fine.",
+  traffic: "Traffic",
+  last_24h: "last 24 h",
+  connected_away: "{home} connected · {away} away",
+  down_n: "{n} down",
+  services: "Services",
+  restart: "Restart",
+  temperature: "Temperature",
+  fan: "Fan",
+  connected_devices: "Connected devices",
+  storage: "Storage",
+  ports_up: "Ports up",
+  received: "Received",
+  sent: "Sent",
+  power: "Power",
+  cpu: "CPU",
+  ram: "Memory",
+  wifi: "Wi-Fi",
+  guest: "Guest",
+  settings_dns: "Settings",
+  details: "Details",
+  jitter: "jitter",
+  loss: "Packet loss",
+  server: "Server",
+  of_best: "{pct} % of the week's best",
+  avg_7d: "7-day average",
+  slowest: "Slowest test",
+  speed_normal: "Normal",
+  speed_slow: "Slow",
+  speed_high_latency: "High latency",
+  speed_no_result: "No result",
+  controls: "Controls",
+  rules: "Rules",
 };
 
 /** Escapes text for HTML (content and attribute values). */
