@@ -41,13 +41,15 @@ Home Assistant integration that adds a **Network** panel to the sidebar, on top 
 ## Features
 
 - **Illustrated top bar**: the internet box, the switches in their rack and the router under a day sky with a light theme, a night sky with a dark one; the box's Wi-Fi waves while a Wi-Fi network is on; a status pill (Online, Internet down, No internet box), the box model and how many devices are connected, and a round **Refresh** button
-- **Overview**: the topology (internet → box → router → switches and access points), download / upload right now and the last 7 days of speed tests, the reverse proxy hosts, the Wi-Fi networks with their switches, the latest devices and the DNS filter at a glance
+- **Overview**: the network drawn as a plan (internet → box → switches → access points), each with its figures and a status chip; **Needs attention** with its action — a named port down, a proxy upstream offline, a certificate to renew, a firmware update to **Install**, missed calls to **Mark as read**, the DNS protection off; the last 24 hours of traffic; the devices split wired / Wi-Fi / guest with the latest arrivals; and a line per service
+- **Internet**: the box — model, firmware, connection type, external IP, how long it has been online —, download and upload over 24 hours, the last speed test, its temperatures and fans, its Wi-Fi switch, missed calls, disk and a **Restart** button (asked first)
 - **Devices**: every device tracked by a router, connected or away, with its IP, MAC, Wi-Fi network or cable and when it was last seen; filter and search by name, IP, MAC or host name
-- **Wi-Fi & switches**: the Wi-Fi networks (turn them on or off), the routers and access points with their client count and temperature, and **each switch's front panel** with its ports lit by their link state
-- **DNS**: queries, blocked queries, block ratio and average time of AdGuard Home or Pi-hole, and its protections (on / off)
-- **Speed**: download, upload and ping of the last test, a **Run a test** button and the daily peaks of the last 30 days
-- **Proxy**: the proxy's state and active rules, then each host (rule domain) with its upstream check — online, offline or not monitored — and when its certificate expires, problems first
-- **Settings**: the integrations read and their state, away devices shown or not, and the confirmation before turning a Wi-Fi network or a protection off
+- **Wi-Fi & switches**: **each switch's front panel** with its ports lit by their link state, its named ports, ports up, received / sent over 24 hours, uptime and power switch; the access points with their firmware and update, CPU, memory and temperature over 24 hours, clients, **Install** and **Restart**; the Wi-Fi networks with their clients and switch
+- **DNS**: queries, blocked queries, block ratio and average time of AdGuard Home or Pi-hole over 24 hours, its settings as chips to turn on or off, its detailed counters, its update and its buttons (refresh the filters…)
+- **Speed**: a dial of the last test against the week's best, upload, ping, jitter, packet loss and server, a status (normal, slow, high latency), **Run a test**, the last 30 days with the 7-day average and the slowest test
+- **Proxy**: the proxy's state and active rules, each host (rule domain) with its upstream check — online, offline or not monitored — and when its certificate expires, problems first, with **Renew** on an expiring certificate; a switch per rule of Reverse Proxy and Zoraxy's controls (HTTPS redirect, port 80, development mode)
+- **Settings**: the integrations read and their state, away devices shown or not, and the confirmation before turning something off, restarting or installing an update
+- A click on a tile opens the entity's details (history, attributes)
 - Tabs without a source are hidden; **administrators only**: the panel and its commands are kept for administrators
 - Light and dark themes, phones and desktops, 22 languages
 - No connection of its own: the panel reads the entities of your network integrations and uses their switches and buttons
@@ -95,11 +97,12 @@ Then **Settings → Devices & services → Add integration → Network Panel**: 
 
 ## Panel
 
-The **Network** entry of the sidebar, at `/network` (each tab has its own address: `/network/devices`, `/network/wifi`, `/network/dns`, `/network/speed`, `/network/proxy`, `/network/settings`). It is for administrators only: other users do not see it in the sidebar, and its commands refuse them.
+The **Network** entry of the sidebar, at `/network` (each tab has its own address: `/network/internet`, `/network/devices`, `/network/wifi`, `/network/dns`, `/network/speed`, `/network/proxy`, `/network/settings`). It is for administrators only: other users do not see it in the sidebar, and its commands refuse them.
 
 | Light | Dark |
 |---|---|
-| <img src="https://raw.githubusercontent.com/juju35/ha-network-panel/main/screenshots/panel-overview.png" alt="Overview tab: topology, speed, Wi-Fi, devices and DNS" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-network-panel/main/screenshots/panel-overview-dark.png" alt="Overview tab: topology, speed, Wi-Fi, devices and DNS dark" width="400"> |
+| <img src="https://raw.githubusercontent.com/juju35/ha-network-panel/main/screenshots/panel-overview.png" alt="Overview tab: plan, needs attention, traffic, devices and services" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-network-panel/main/screenshots/panel-overview-dark.png" alt="Overview tab: plan, needs attention, traffic, devices and services dark" width="400"> |
+| <img src="https://raw.githubusercontent.com/juju35/ha-network-panel/main/screenshots/panel-internet.png" alt="Internet tab: the box, its rates, temperatures and buttons" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-network-panel/main/screenshots/panel-internet-dark.png" alt="Internet tab: the box, its rates, temperatures and buttons dark" width="400"> |
 | <img src="https://raw.githubusercontent.com/juju35/ha-network-panel/main/screenshots/panel-devices.png" alt="Devices tab" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-network-panel/main/screenshots/panel-devices-dark.png" alt="Devices tab dark" width="400"> |
 | <img src="https://raw.githubusercontent.com/juju35/ha-network-panel/main/screenshots/panel-wifi.png" alt="Wi-Fi & switches tab" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-network-panel/main/screenshots/panel-wifi-dark.png" alt="Wi-Fi & switches tab dark" width="400"> |
 | <img src="https://raw.githubusercontent.com/juju35/ha-network-panel/main/screenshots/panel-dns.png" alt="DNS tab" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-network-panel/main/screenshots/panel-dns-dark.png" alt="DNS tab dark" width="400"> |

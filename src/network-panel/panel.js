@@ -31,8 +31,7 @@ const NETWORK_ICONS = {
   menu: "M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z",
   web: "M16.36,14C16.44,13.34 16.5,12.68 16.5,12C16.5,11.32 16.44,10.66 16.36,10H19.74C19.9,10.64 20,11.31 20,12C20,12.69 19.9,13.36 19.74,14M14.59,19.56C15.19,18.45 15.65,17.25 15.97,16H18.92C17.96,17.65 16.43,18.93 14.59,19.56M14.34,14H9.66C9.56,13.34 9.5,12.68 9.5,12C9.5,11.32 9.56,10.65 9.66,10H14.34C14.43,10.65 14.5,11.32 14.5,12C14.5,12.68 14.43,13.34 14.34,14M12,19.96C11.17,18.76 10.5,17.43 10.09,16H13.91C13.5,17.43 12.83,18.76 12,19.96M8,8H5.08C6.03,6.34 7.57,5.06 9.4,4.44C8.8,5.55 8.35,6.75 8,8M5.08,16H8C8.35,17.25 8.8,18.45 9.4,19.56C7.57,18.93 6.03,17.65 5.08,16M4.26,14C4.1,13.36 4,12.69 4,12C4,11.31 4.1,10.64 4.26,10H7.64C7.56,10.66 7.5,11.32 7.5,12C7.5,12.68 7.56,13.34 7.64,14M12,4.03C12.83,5.23 13.5,6.57 13.91,8H10.09C10.5,6.57 11.17,5.23 12,4.03M18.92,8H15.97C15.65,6.75 15.19,5.55 14.59,4.44C16.43,5.07 17.96,6.34 18.92,8M12,2C6.47,2 2,6.5 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z",
 };
-const networkIcon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${NETWORK_ICONS[name]}"/></svg>`;
-const NETWORK_CHEVRON = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+export const networkIcon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${NETWORK_ICONS[name]}"/></svg>`;
 
 // Display names of the source integrations (Settings tab)
 export const NETWORK_SOURCE_NAMES = {
@@ -213,7 +212,7 @@ export class NetworkPanel extends HTMLElement {
   _toggle(id, on) {
     const st = this._st(id);
     if (!on && this._inv?.settings?.confirm_actions !== false) {
-      this._ask = { id, name: networkName(st) };
+      this._ask = { act: "off", id, text: this._t("confirm_off", { name: networkName(st) }) };
       this._render(true);
       return;
     }
@@ -242,16 +241,39 @@ export class NetworkPanel extends HTMLElement {
       this._render(true);
     } else if (act === "toggle") this._toggle(arg, on === "1");
     else if (act === "confirm") {
-      const id = this._ask?.id;
+      const ask = this._ask;
       this._ask = null;
-      if (id) this._hass.callService("switch", "turn_off", { entity_id: id });
+      if (ask) this._do(ask.act, ask.id, ask.on);
       this._render(true);
     } else if (act === "cancel") {
       this._ask = null;
       this._render(true);
     } else if (act === "test") this._hass.callService("homeassistant", "update_entity", { entity_id: arg });
+    else if (act === "press" || act === "install") {
+      // A restart cuts the network, an install restarts the device: asked first
+      if ((el.dataset.ask || act === "install") && this._inv?.settings?.confirm_actions !== false) {
+        const name = networkName(this._st(arg));
+        this._ask = { act, id: arg, text: this._t(act === "install" ? "confirm_install" : "confirm_press", { name }) };
+        this._render(true);
+      } else this._do(act, arg);
+    } else if (act === "rule") {
+      // Turning a rule off cuts its site: asked first, like a switch
+      if (on !== "1" && this._inv?.settings?.confirm_actions !== false) {
+        this._ask = { act: "rule", id: arg, on: false, text: this._t("confirm_off", { name: arg }) };
+        this._render(true);
+      } else this._do("rule", arg, on === "1");
+    }
+    else if (act === "more") this.dispatchEvent(new CustomEvent("hass-more-info", { bubbles: true, composed: true, detail: { entityId: arg } }));
     else if (act === "options") this._navigate("/config/integrations/integration/network_panel");
     else if (act === "integrations") this._navigate("/config/integrations/dashboard");
+  }
+
+  /** Runs a confirmed or direct action: a switch turned off, a button pressed, an update installed, a rule toggled. */
+  _do(act, id, on) {
+    if (act === "off") this._hass.callService("switch", "turn_off", { entity_id: id });
+    else if (act === "press") this._hass.callService("button", "press", { entity_id: id });
+    else if (act === "install") this._hass.callService("update", "install", { entity_id: id });
+    else if (act === "rule") this._hass.callService("reverse_proxy", "toggle_proxy_rule", { domain: id, enable: !!on });
   }
 
   _onInput(ev) {
@@ -278,10 +300,15 @@ export class NetworkPanel extends HTMLElement {
     };
     add(inv.box?.entities);
     for (const r of inv.routers) add(r.entities);
-    for (const s of inv.switches) for (const p of this._portsOf(s)) ids.push(p.entity);
+    for (const s of inv.switches) {
+      add(s.entities);
+      for (const p of this._portsOf(s)) ids.push(p.entity);
+    }
     ids.push(...inv.wifi);
     add(inv.dns?.entities);
-    ids.push(...(inv.dns?.switches || []));
+    ids.push(...(inv.dns?.switches || []), ...(inv.dns?.details || []), ...(inv.dns?.updates || []));
+    for (const d of [inv.box, ...inv.routers, ...inv.switches].filter(Boolean)) ids.push(...(d.temps || []), ...(d.fans || []));
+    ids.push(...(inv.proxy?.controls || []));
     add(inv.speed?.entities);
     for (const h of inv.proxy?.hosts || []) ids.push(...[h.upstream, h.cert, h.expiring].filter(Boolean));
     add(inv.proxy?.summary);
@@ -327,7 +354,7 @@ export class NetworkPanel extends HTMLElement {
 
   _askHtml() {
     if (!this._ask) return "";
-    return `<div class="ask"><div class="c" role="dialog" aria-modal="true"><div class="h">${networkEsc(this._t("confirm_off", { name: this._ask.name }))}</div><div class="chips"><button class="b" data-act="cancel">${networkEsc(this._t("cancel"))}</button><button class="b bad" data-act="confirm">${networkEsc(this._t("confirm"))}</button></div></div></div>`;
+    return `<div class="ask"><div class="c" role="dialog" aria-modal="true"><div class="h">${networkEsc(this._ask.text)}</div><div class="chips"><button class="b" data-act="cancel">${networkEsc(this._t("cancel"))}</button><button class="b bad" data-act="confirm">${networkEsc(this._t("confirm"))}</button></div></div></div>`;
   }
 
   /** The internet link: true (up), false (down), null (no box). */
@@ -348,7 +375,7 @@ export class NetworkPanel extends HTMLElement {
   _switchPorts(sw) {
     return this._portsOf(sw).map((p) => {
       const st = this._st(p.entity);
-      return { label: String(p.n), state: networkPortState(st), title: p.label || this._t("port_n", { n: p.n }) };
+      return { label: String(p.n), state: networkPortState(st), title: p.label || this._t("port_n", { n: p.n }), watched: !!p.named };
     });
   }
 
@@ -381,80 +408,12 @@ export class NetworkPanel extends HTMLElement {
     return `<div class="c empty">${networkEsc(this._t(key))}</div>`;
   }
 
-  // ----- Overview -----
-
-  _tab_overview() {
-    const inv = this._inv;
-    const nothing = !inv.box && !inv.routers.length && !inv.switches.length && !inv.dns && !inv.speed && !inv.proxy && !networkTrackers(this._hass.states).length;
-    if (nothing)
-      return `<div class="c empty">${networkEsc(this._t("nothing"))}<br><br><button class="b" data-act="integrations">${networkEsc(this._t("open_integrations"))}</button></div>`;
-    const left = [this._speedCard(), this._proxyCard()].filter(Boolean);
-    const mid = [this._wifiCard(), this._devicesCard()].filter(Boolean);
-    const right = [this._dnsCard()].filter(Boolean);
-    const cols = [left, mid, right].filter((c) => c.length).map((c) => `<div class="col">${c.join("")}</div>`);
-    return `${this._topology()}<div class="grid3">${cols.join("")}</div>`;
-  }
-
-  _node(vis, name, status, cls = "") {
-    return `<div class="node"><div class="vis${cls}">${vis}</div><div class="nm">${networkEsc(name)}</div><div class="st ${status[1] || ""}">${networkEsc(status[0])}</div></div>`;
-  }
-
-  _topology() {
-    const inv = this._inv;
-    const lang = this._lang;
-    const nodes = [];
-    const box = inv.box;
-    if (box) {
-      const online = this._online();
-      const up = networkUptime(this._st(box.entities.uptime));
-      const status = online === false ? [this._t("offline"), "bad"] : [up !== null ? this._t("online_since", { time: networkDuration(lang, up) }) : this._t("online"), "ok"];
-      nodes.push(this._node(networkIcon("web"), this._t("internet"), status, online === false ? " globe down" : " globe"));
-      const down = networkBits(this._st(box.entities.rate_down));
-      const upr = networkBits(this._st(box.entities.rate_up));
-      const rates = down !== null || upr !== null ? this._t("down_up", { down: networkRate(lang, down), up: networkRate(lang, upr) }) : box.model;
-      nodes.push(this._node(`<img src="${networkEsc(networkBoxPicture(box))}" alt="">`, networkBoxModel(box)?.name || box.name, [rates]));
-    }
-    inv.switches.forEach((sw, i) => {
-      const ports = this._switchPorts(sw);
-      const active = ports.filter((p) => p.state === "up").length;
-      nodes.push(this._node(networkChassisSvg(ports, `topo${i}`), sw.name, [ports.length ? this._t("ports_active", { n: ports.length, active }) : sw.model]));
-    });
-    const trackers = networkTrackers(this._hass.states);
-    if (inv.routers.length || inv.wifi.length || trackers.length) {
-      const home = trackers.filter((s) => s.state === "home").length;
-      const wifiOn = inv.wifi.filter((id) => networkOn(this._st(id))).length;
-      const status = inv.wifi.length ? this._t("wifi_on", { on: wifiOn, n: inv.wifi.length }) : inv.routers[0]?.name || "";
-      nodes.push(this._node(`<img src="${networkEsc(networkRouterPicture(inv.routers[0]))}" alt="">`, this._t("wifi_devices", { n: home }), [status]));
-    }
-    if (!nodes.length) return "";
-    return `<div class="topo">${nodes.join(NETWORK_CHEVRON)}</div>`;
-  }
+  // ----- shared state -----
 
   _speedLast() {
     const sp = this._inv.speed;
     if (!sp) return null;
     return { down: networkBits(this._st(sp.entities.download)), up: networkBits(this._st(sp.entities.upload)), ping: networkValue(this._st(sp.entities.ping)) };
-  }
-
-  _speedCard() {
-    const sp = this._inv.speed;
-    if (!sp) return "";
-    const lang = this._lang;
-    const last = this._speedLast();
-    const st = this._st(sp.entities.download);
-    const factor = networkBits(st) !== null && networkValue(st) ? networkBits(st) / networkValue(st) : 1e6;
-    const peaks = networkDailyPeaks(this._history?.download || [], 7).map((v) => (v === null ? null : v * factor));
-    const max = Math.max(1, ...peaks.filter((v) => v !== null));
-    const avg = peaks.filter((v) => v !== null).reduce((a, b, _i, arr) => a + b / arr.length, 0);
-    const bars = peaks
-      .map((v, i) => `<div class="${i === 6 ? "last" : v !== null && v < avg * 0.7 ? "low" : ""}" style="height:${v === null ? 0 : Math.max(3, Math.round((v / max) * 100))}%" title="${networkEsc(networkRate(lang, v))}"></div>`)
-      .join("");
-    const days = Array.from({ length: 7 }, (_, i) => new Date(Date.now() - (6 - i) * 86400000).toLocaleDateString(lang, { weekday: "short" }));
-    const line =
-      last.down !== null
-        ? `<b>${networkEsc(networkRate(lang, last.down))}</b> <span class="m">${last.ping !== null ? `· ${networkEsc(this._t("ping"))} ${networkEsc(networkNum(lang, last.ping, 0))} ms` : ""}</span>`
-        : `<span class="m">${networkEsc(this._t("no_test"))}</span>`;
-    return `<div class="c"><div class="h"><span>${networkEsc(this._t("speed_7d"))}</span><span class="s m">${networkEsc(sp.title)}</span></div><div class="bars">${bars}</div><div class="days">${days.map((d) => `<span>${networkEsc(d)}</span>`).join("")}</div><div class="r" style="margin-top:10px;font-size:12.5px"><span>${line}</span><button class="b" data-act="test" data-arg="${networkEsc(sp.entities.download || "")}">${networkEsc(this._t("run_test"))}</button></div></div>`;
   }
 
   /** The clock (a method, so the tests can set it). */
@@ -509,62 +468,10 @@ export class NetworkPanel extends HTMLElement {
     return `<span class="pill ${c.running ? "ok" : "bad"}"><span class="dot"></span>${networkEsc(this._t(c.running ? "proxy_running" : "proxy_stopped"))}</span>`;
   }
 
-  _proxyCard() {
-    const px = this._inv.proxy;
-    if (!px) return "";
-    const c = this._proxyCounts(this._proxyHosts());
-    return `<div class="c"><div class="h"><span>${networkEsc(this._t("proxy"))}</span><span class="s m">${networkEsc(px.title)}</span></div><div class="kpis">${this._proxyKpis(c)}</div></div>`;
-  }
-
-  _wifiRow(id, withButton) {
-    const st = this._st(id);
-    const on = networkOn(st);
-    const owner = [this._inv.box, ...this._inv.routers].find((d) => d?.wifi?.includes(id));
-    const btn = withButton ? `<button class="b${on ? "" : " on"}" data-act="toggle" data-arg="${networkEsc(id)}" data-on="${on ? "0" : "1"}">${networkEsc(this._t(on ? "turn_off" : "turn_on"))}</button>` : "";
-    return `<div class="wifi"><span class="d${on ? " on" : ""}"></span><div class="grow"><b>${networkEsc(networkName(st) || id)}</b><div class="s m">${networkEsc([owner?.name, this._t(on ? "state_on" : "state_off")].filter(Boolean).join(" · "))}</div></div>${btn}</div>`;
-  }
-
-  _wifiCard() {
-    const wifi = this._inv.wifi;
-    if (!wifi.length) return "";
-    return `<div class="c"><div class="h"><span>${networkEsc(this._t("wifi_networks"))}</span></div><div class="list">${wifi.map((id) => this._wifiRow(id, false)).join("")}</div></div>`;
-  }
-
-  _devicesCard() {
-    const trackers = networkTrackers(this._hass.states);
-    if (!trackers.length) return "";
-    const lang = this._lang;
-    const home = trackers.filter((s) => s.state === "home");
-    const latest = [...home].sort((a, b) => Date.parse(b.last_changed) - Date.parse(a.last_changed)).slice(0, 4);
-    return `<div class="c"><div class="h"><span>${networkEsc(this._t("devices"))}</span></div><div class="kpis"><div class="t"><div class="s m">${networkEsc(this._t("connected"))}</div><b class="ok">${home.length}</b></div><div class="t"><div class="s m">${networkEsc(this._t("away"))}</div><b>${trackers.length - home.length}</b></div></div><div class="s m" style="margin:12px 0 6px">${networkEsc(this._t("latest"))}</div><div class="list">${latest
-      .map((s) => `<div class="r"><span>${networkEsc(networkName(s))}</span><span class="s m">${networkEsc(networkAgo(lang, s.last_changed))}</span></div>`)
-      .join("")}</div></div>`;
-  }
-
-  _dnsRing(ratio) {
-    const r = 38;
-    const len = 2 * Math.PI * r;
-    const v = Math.max(0, Math.min(100, ratio ?? 0));
-    return `<svg class="ring" viewBox="0 0 92 92" role="img" aria-label="${networkEsc(this._t("ratio"))}"><circle class="bg" cx="46" cy="46" r="${r}" fill="none" stroke-width="10"/><circle class="fg" cx="46" cy="46" r="${r}" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="${((v / 100) * len).toFixed(1)} ${len.toFixed(1)}" transform="rotate(-90 46 46)"/><text x="46" y="52" text-anchor="middle">${networkEsc(networkNum(this._lang, v, 1))} %</text></svg>`;
-  }
-
   _dnsProtected() {
     const dns = this._inv.dns;
     if (!dns?.switches.length) return null;
     return networkOn(this._st(dns.switches[0]));
-  }
-
-  _dnsCard() {
-    const dns = this._inv.dns;
-    if (!dns) return "";
-    const lang = this._lang;
-    const e = dns.entities;
-    const q = networkValue(this._st(e.queries));
-    const b = networkValue(this._st(e.blocked));
-    const ratio = networkValue(this._st(e.ratio)) ?? (q ? ((b ?? 0) / q) * 100 : null);
-    const prot = this._dnsProtected();
-    const pill = prot === null ? "" : `<span class="pill ${prot ? "ok" : "warn"}">${networkEsc(this._t(prot ? "protection_on" : "protection_off"))}</span>`;
-    return `<div class="c"><div class="dnsart">${NETWORK_DNS_ART}</div><div class="h"><span>${networkEsc(this._t("dns_filter"))}</span>${pill}</div><div class="dev">${this._dnsRing(ratio)}<div class="list"><span><b>${q === null ? "-" : networkEsc(networkNum(lang, q))}</b> ${networkEsc(this._t("queries"))}</span><span><b class="bad">${b === null ? "-" : networkEsc(networkNum(lang, b))}</b> ${networkEsc(this._t("blocked"))}</span><span class="s m">${networkEsc(dns.title)}</span></div></div></div>`;
   }
 
   // ----- Devices -----
@@ -601,57 +508,6 @@ export class NetworkPanel extends HTMLElement {
     return `<div class="r"><div class="chips">${chips}</div><input class="search" type="search" data-act="search" placeholder="${networkEsc(this._t("search"))}" aria-label="${networkEsc(this._t("search"))}" value="${networkEsc(this._search)}"></div><div class="c">${table}</div>`;
   }
 
-  // ----- Wi-Fi -----
-
-  _routerRow(r) {
-    const clients = networkValue(this._st(r.entities.clients));
-    const temp = this._st(r.entities.temperature);
-    const extra = [r.model, clients !== null ? this._t("clients_n", { n: networkNum(this._lang, clients) }) : "", temp && networkValue(temp) !== null ? `${networkNum(this._lang, networkValue(temp), 0)} °C` : ""]
-      .filter(Boolean)
-      .join(" · ");
-    return `<div class="dev t"><div class="pic"><img src="${networkEsc(networkRouterPicture(r))}" alt=""></div><div class="grow"><b>${networkEsc(r.name)}</b><div class="s m">${networkEsc(extra)}</div></div>${networkHttp(r.url) ? `<a class="b" href="${networkEsc(r.url)}" target="_blank" rel="noopener">${networkEsc(this._t("open_admin"))}</a>` : ""}</div>`;
-  }
-
-  _tab_wifi() {
-    const inv = this._inv;
-    const wifi = inv.wifi.length ? `<div class="list">${inv.wifi.map((id) => this._wifiRow(id, true)).join("")}</div>` : `<div class="empty">${networkEsc(this._t("empty_wifi"))}</div>`;
-    const routers = inv.routers.length ? `<div class="c"><div class="h"><span>${networkEsc(this._t("access_points"))}</span></div><div class="list">${inv.routers.map((r) => this._routerRow(r)).join("")}</div></div>` : "";
-    const switches = inv.switches.length
-      ? inv.switches
-          .map((sw, i) => {
-            const ports = this._switchPorts(sw);
-            const active = ports.filter((p) => p.state === "up").length;
-            return `<div class="c swc"><div class="h"><span>${networkEsc(sw.name)}</span><span class="s m">${networkEsc(sw.model)}</span></div>${networkChassisSvg(ports, `tab${i}`)}<div class="s m">${networkEsc(ports.length ? this._t("ports_active", { n: ports.length, active }) : "")}</div></div>`;
-          })
-          .join("")
-      : `<div class="c empty">${networkEsc(this._t("empty_switches"))}</div>`;
-    return `<div class="grid2"><div class="col"><div class="c"><div class="h"><span>${networkEsc(this._t("wifi_networks"))}</span></div>${wifi}</div>${routers}</div><div class="col"><div class="h" style="margin:0">${networkEsc(this._t("switches"))}</div>${switches}</div></div>`;
-  }
-
-  // ----- DNS -----
-
-  _tab_dns() {
-    const dns = this._inv.dns;
-    const lang = this._lang;
-    const e = dns.entities;
-    const val = (id) => networkValue(this._st(id));
-    const q = val(e.queries);
-    const b = val(e.blocked);
-    const ratio = val(e.ratio) ?? (q ? ((b ?? 0) / q) * 100 : null);
-    const speed = val(e.speed);
-    const kpi = (label, v, cls = "") => `<div class="t"><div class="s m">${networkEsc(this._t(label))}</div><b class="${cls}">${networkEsc(v)}</b></div>`;
-    const kpis = [
-      kpi("queries", q === null ? "-" : networkNum(lang, q)),
-      kpi("blocked", b === null ? "-" : networkNum(lang, b), "bad"),
-      kpi("ratio", ratio === null ? "-" : `${networkNum(lang, ratio, 1)} %`),
-      kpi("avg_time", speed === null ? "-" : `${networkNum(lang, speed, speed < 10 ? 1 : 0)} ms`),
-    ].join("");
-    const switches = dns.switches.length
-      ? dns.switches.map((id) => this._wifiRow(id, true)).join("")
-      : `<div class="empty">-</div>`;
-    return `<div class="grid2"><div class="c"><div class="dnsart">${NETWORK_DNS_ART}</div><div class="h"><span>${networkEsc(this._t("dns_filter"))}</span><span class="s m">${networkEsc(dns.title)}</span></div><div class="dev">${this._dnsRing(ratio)}<div class="kpis" style="flex:1">${kpis}</div></div></div><div class="c"><div class="h"><span>${networkEsc(this._t("protections"))}</span></div><div class="list">${switches}</div></div></div>`;
-  }
-
   // ----- Speed -----
 
   _chart(series) {
@@ -667,25 +523,6 @@ export class NetworkPanel extends HTMLElement {
     const grid = [0.25, 0.5, 0.75].map((f) => `<path class="grid" d="M0 ${(H - 10 - f * (H - 20)).toFixed(1)}H${W}"/>`).join("");
     const lines = series.map((s) => (s.points.length ? `<path class="${s.cls}" d="M${s.points.map((p) => `${x(p.t)} ${y(p.v)}`).join("L")}"/>` : "")).join("");
     return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${grid}${lines}</svg>`;
-  }
-
-  _tab_speed() {
-    const sp = this._inv.speed;
-    const lang = this._lang;
-    const last = this._speedLast();
-    const st = this._st(sp.entities.download);
-    const kpi = (label, v) => `<div class="t"><div class="s m">${networkEsc(this._t(label))}</div><b>${networkEsc(v)}</b></div>`;
-    const box = this._inv.box;
-    const now = box
-      ? `<div class="c"><div class="h"><span>${networkEsc(this._t("right_now"))}</span><span class="s m">${networkEsc(box.name)}</span></div><div class="list"><div class="r"><span>${networkEsc(this._t("download"))}</span><b>${networkEsc(networkRate(lang, networkBits(this._st(box.entities.rate_down))))}</b></div><div class="r"><span>${networkEsc(this._t("upload"))}</span><b>${networkEsc(networkRate(lang, networkBits(this._st(box.entities.rate_up))))}</b></div>${
-          box.entities.ip && this._st(box.entities.ip) ? `<div class="r"><span>${networkEsc(this._t("external_ip"))}</span><b>${networkEsc(this._st(box.entities.ip).state)}</b></div>` : ""
-        }</div></div>`
-      : "";
-    const chart = this._chart([
-      { cls: "dn", points: this._history?.download || [] },
-      { cls: "up", points: this._history?.upload || [] },
-    ]);
-    return `<div class="c"><div class="h"><span>${networkEsc(this._t("speed_30d", { name: sp.title }))}</span><div class="legend"><span><i style="background:var(--nw-ok)"></i>${networkEsc(this._t("download"))}</span><span><i style="background:var(--nw-accent)"></i>${networkEsc(this._t("upload"))}</span></div></div>${chart}</div><div class="grid2"><div class="c"><div class="h"><span>${networkEsc(this._t("last_test"))}</span><span class="s m">${st ? networkEsc(networkAgo(lang, st.last_changed)) : ""}</span></div><div class="kpis">${kpi("download", networkRate(lang, last.down))}${kpi("upload", networkRate(lang, last.up))}${kpi("ping", last.ping === null ? "-" : `${networkNum(lang, last.ping, 0)} ms`)}</div><div style="margin-top:12px"><button class="b" data-act="test" data-arg="${networkEsc(sp.entities.download || "")}">${networkEsc(this._t("run_test"))}</button></div></div>${now}</div>`;
   }
 
   // ----- Proxy -----
@@ -707,10 +544,14 @@ export class NetworkPanel extends HTMLElement {
         const label = this._t(h.state === "bad" ? "offline" : h.state === "ok" ? "online" : "not_checked");
         const cls = h.state === "bad" ? "bad" : h.state === "ok" ? (h.expiring ? "warn" : "ok") : "idle";
         const link = /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(h.name) ? ` href="https://${networkEsc(h.name)}" target="_blank" rel="noopener noreferrer"` : "";
-        return `<div class="wifi host"><span class="d ${cls}"></span><div class="grow"><b>${link ? `<a${link}>${networkEsc(h.name)}</a>` : networkEsc(h.name)}</b><div class="s ${h.expiring ? "warn" : "m"}">${networkEsc(cert || "\u00a0")}</div></div><span class="s ${h.state === "bad" ? "bad" : h.state === "ok" ? "ok" : "m"}" style="font-weight:600">${networkEsc(label)}</span></div>`;
+        return `<div class="wifi host"><span class="d ${cls}"></span><div class="grow"><b>${link ? `<a${link}>${networkEsc(h.name)}</a>` : networkEsc(h.name)}</b><div class="s ${h.expiring ? "warn" : "m"}">${networkEsc(cert || "\u00a0")}</div></div><span class="s ${h.state === "bad" ? "bad" : h.state === "ok" ? "ok" : "m"}" style="font-weight:600">${networkEsc(label)}</span>${h.expiring && h.renew ? `<button class="b on" data-act="press" data-arg="${networkEsc(h.renew)}">${networkEsc(this._t("renew"))}</button>` : ""}</div>`;
       })
       .join("");
-    return `${head}<div class="c"><div class="h"><span>${networkEsc(this._t("hosts"))}</span><span class="s m">${hosts.length}</span></div><div class="hosts">${rows}</div></div>`;
+    const x = this._proxyExtras();
+    const card = (key, body) => (body ? `<div class="c"><div class="h"><span>${networkEsc(this._t(key))}</span></div><div class="list">${body}</div></div>` : "");
+    const side = [card("rules", x.rules), card("controls", x.controls)].join("");
+    const main = `<div class="c"><div class="h"><span>${networkEsc(this._t("hosts"))}</span><span class="s m">${hosts.length}</span></div><div class="hosts${side ? " one" : ""}">${rows}</div></div>`;
+    return `${head}${side ? `<div class="ovgrid"><div class="col">${main}</div><div class="col">${side}</div></div>` : main}`;
   }
 
   // ----- Settings -----

@@ -59,7 +59,25 @@ SLOTS: dict[str, tuple[str, str | None, re.Pattern[str]]] = {
     "clients": ("sensor", None, re.compile(r"clients|connected_devices|devices_connected|^devices$", re.IGNORECASE)),
     "temperature": ("sensor", "temperature", re.compile(r".", re.IGNORECASE)),
     "reboot": ("button", "restart", re.compile(r".", re.IGNORECASE)),
+    # What the box, router and switch cards show besides: connection type, missed calls (and the button marking them
+    # read), system gauges, the firmware update, a switch's power and its byte counters
+    "connection": (
+        "sensor",
+        None,
+        re.compile(r"connection_type|link_type|wan_type|access_type|line_type|media", re.IGNORECASE),
+    ),
+    "missed_calls": ("sensor", None, re.compile(r"missed", re.IGNORECASE)),
+    "mark_calls": ("button", None, re.compile(r"missed|mark_.*read|calls", re.IGNORECASE)),
+    # Whole words only: "load" is not "download", "ram" is not "program"
+    "cpu": ("sensor", "-temperature", re.compile(r"cpu|processor|(?:^|_)(?:system_)?load(?:_|$)", re.IGNORECASE)),
+    "ram": ("sensor", "-temperature", re.compile(r"memory|(?:^|_)(?:mem|ram)(?:_|$)", re.IGNORECASE)),
+    "disk": ("sensor", "-temperature", re.compile(r"disk|storage|partition|hdd", re.IGNORECASE)),
+    "update": ("update", None, re.compile(r".", re.IGNORECASE)),
+    "power": ("switch", None, re.compile(r"^power$|_power$|^power_|poe_?all|device_power", re.IGNORECASE)),
+    "rx_total": ("sensor", "data_size", re.compile(r"rx|receiv|download|in_?octets|bytes_in", re.IGNORECASE)),
+    "tx_total": ("sensor", "data_size", re.compile(r"tx|sent|upload|out_?octets|bytes_out", re.IGNORECASE)),
 }
+FAN_RE = re.compile(r"fan", re.IGNORECASE)
 WIFI_RE = re.compile(r"wi-?fi|wlan|ssid|guest", re.IGNORECASE)
 PORT_RE = re.compile(r"port[ _-]?(\d{1,2})(?!\d)", re.IGNORECASE)
 DNS_SLOTS = {
@@ -73,6 +91,8 @@ SPEED_SLOTS = {
     "download": re.compile(r"download", re.IGNORECASE),
     "upload": re.compile(r"upload", re.IGNORECASE),
     "ping": re.compile(r"ping|latency", re.IGNORECASE),
+    "jitter": re.compile(r"jitter", re.IGNORECASE),
+    "loss": re.compile(r"loss", re.IGNORECASE),
 }
 
 
@@ -91,6 +111,8 @@ class Device:
     entities: dict[str, str] = field(default_factory=dict)
     wifi: list[str] = field(default_factory=list)
     ports: list[dict[str, Any]] = field(default_factory=list)
+    temps: list[str] = field(default_factory=list)
+    fans: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -129,12 +151,21 @@ def _match(entry: er.RegistryEntry, pattern: re.Pattern[str]) -> bool:
 def _slots(entities: list[er.RegistryEntry]) -> dict[str, str]:
     """The first entity of each slot (translation key first, then entity id)."""
     found: dict[str, str] = {}
+    # A port's own entities (its PoE switch, its counters) are never the device's
+    entities = [e for e in entities if not (PORT_RE.search(_key(e)) or PORT_RE.search(_object_id(e)))]
     for slot, (domain, device_class, pattern) in SLOTS.items():
-        candidates = [e for e in entities if e.domain == domain and (device_class is None or _class(e) == device_class)]
+        # A device class "-x" keeps every class but x (a CPU load, not the CPU temperature)
+        if device_class and device_class.startswith("-"):
+            candidates = [e for e in entities if e.domain == domain and _class(e) != device_class[1:]]
+        else:
+            candidates = [
+                e for e in entities if e.domain == domain and (device_class is None or _class(e) == device_class)
+            ]
         by_key = [e for e in candidates if pattern.search(_key(e))]
         by_id = [e for e in candidates if pattern.search(_object_id(e))]
         if pick := (by_key or by_id):
-            if slot == "rate_up" and found.get("rate_down") == pick[0].entity_id:
+            pick = [e for e in pick if e.entity_id not in found.values()]
+            if not pick:
                 continue
             found[slot] = pick[0].entity_id
     return found
@@ -153,7 +184,14 @@ def _ports(entities: list[er.RegistryEntry]) -> list[dict[str, Any]]:
         # A link binary sensor wins over a PoE switch or a counter of the same port
         rank = {"binary_sensor": 0, "switch": 1, "sensor": 2}[e.domain]
         if n not in ports or rank < ports[n]["rank"]:
-            ports[n] = {"n": n, "entity": e.entity_id, "label": e.name or e.original_name or "", "rank": rank}
+            # A port the user named (a NAS, a camera) is one they watch: it going down needs attention
+            ports[n] = {
+                "n": n,
+                "entity": e.entity_id,
+                "label": e.name or e.original_name or "",
+                "named": bool(e.name),
+                "rank": rank,
+            }
     return [{k: v for k, v in p.items() if k != "rank"} for _, p in sorted(ports.items())]
 
 
@@ -184,6 +222,14 @@ def _device(platform: str, device: dr.DeviceEntry, entities: list[er.RegistryEnt
             e.entity_id for e in entities if e.domain == "switch" and _match(e, WIFI_RE) and not PORT_RE.search(_key(e))
         ],
         ports=_ports(entities) if kind == "switch" else [],
+        temps=[e.entity_id for e in entities if e.domain == "sensor" and _class(e) == "temperature"],
+        fans=[
+            e.entity_id
+            for e in entities
+            if e.domain == "sensor"
+            and _class(e) != "temperature"
+            and (FAN_RE.search(_key(e)) or FAN_RE.search(_object_id(e)))
+        ],
     )
 
 
@@ -206,8 +252,15 @@ PROXY_SUMMARY = {
     "certificates": "tls_certificates",
     "version": "version",
 }
-PROXY_HOST_KEYS = {"upstream_problem": "upstream", "certificate": "cert", "certificate_expiring": "expiring"}
-PROXY_HOST_ID = re.compile(r"_(?:upstream_problem|cert_expiry|cert_expiring)_(.+)$")
+PROXY_HOST_KEYS = {
+    "upstream_problem": "upstream",
+    "certificate": "cert",
+    "certificate_expiring": "expiring",
+    "renew": "renew",
+}
+PROXY_HOST_ID = re.compile(r"_(?:upstream_problem|cert_expiry|cert_expiring|renew)_(.+)$")
+# Zoraxy's controls (HTTPS redirect, port 80, development mode)
+PROXY_CONTROLS = ("https_redirect", "port_80", "development_mode")
 
 
 def _proxy(entry: Any, entities: list[er.RegistryEntry]) -> dict[str, Any]:
@@ -222,7 +275,7 @@ def _proxy(entry: Any, entities: list[er.RegistryEntry]) -> dict[str, Any]:
         if role and m:
             hosts.setdefault(m.group(1), {"id": m.group(1), "problem": True})[role] = e.entity_id
     if hosts:
-        out = [h for h in hosts.values() if "upstream" in h or "cert" in h]
+        out = [h for h in hosts.values() if "upstream" in h or "cert" in h or "renew" in h]
     else:
         out = [
             {
@@ -234,7 +287,14 @@ def _proxy(entry: Any, entities: list[er.RegistryEntry]) -> dict[str, Any]:
             for e in entities
             if e.domain in ("binary_sensor", "sensor") and not e.entity_category
         ]
-    return {"summary": summary, "hosts": sorted(out, key=lambda h: str(h.get("name") or h["id"]))}
+    controls = {
+        e.translation_key: e.entity_id for e in entities if e.domain == "switch" and e.translation_key in PROXY_CONTROLS
+    }
+    return {
+        "summary": summary,
+        "controls": [controls[k] for k in PROXY_CONTROLS if k in controls],
+        "hosts": sorted(out, key=lambda h: str(h.get("name") or h["id"])),
+    }
 
 
 def _box_id(entry_devices: list[dr.DeviceEntry], device_entities: Any) -> str | None:
@@ -286,11 +346,21 @@ def async_inventory(hass: HomeAssistant) -> Inventory:
             ]
             if platform in DNS_PLATFORMS:
                 if inv.dns is None:
+                    dns_slots = _first(entry_entities, "sensor", DNS_SLOTS)
                     inv.dns = {
                         "platform": platform,
                         "title": entry.title,
-                        "entities": _first(entry_entities, "sensor", DNS_SLOTS),
+                        "entities": dns_slots,
                         "switches": [e.entity_id for e in entry_entities if e.domain == "switch"],
+                        # The other counters (parental, safe browsing, rules, clients…), its buttons (refresh the
+                        # filters) and pending updates, as ha-dns-filter-card shows them
+                        "details": [
+                            e.entity_id
+                            for e in entry_entities
+                            if e.domain == "sensor" and e.entity_id not in dns_slots.values() and not e.entity_category
+                        ][:8],
+                        "buttons": [e.entity_id for e in entry_entities if e.domain == "button"],
+                        "updates": [e.entity_id for e in entry_entities if e.domain == "update"],
                     }
                 continue
             if platform in SPEED_PLATFORMS:
@@ -299,6 +369,7 @@ def async_inventory(hass: HomeAssistant) -> Inventory:
                         "platform": platform,
                         "title": entry.title,
                         "entities": _first(entry_entities, "sensor", SPEED_SLOTS),
+                        "button": next((e.entity_id for e in entry_entities if e.domain == "button"), None),
                     }
                 continue
             if platform in PROXY_PLATFORMS:

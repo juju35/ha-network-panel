@@ -139,7 +139,9 @@ test("tabs without a source are hidden", () => {
   const p = panel();
   p._inv.dns = null;
   p._inv.proxy = null;
-  assert.deepEqual(p._tabs(), ["overview", "devices", "wifi", "speed", "settings"]);
+  assert.deepEqual(p._tabs(), ["overview", "internet", "devices", "wifi", "speed", "settings"]);
+  p._inv.box = null;
+  assert.equal(p._tabs().includes("internet"), false);
   p._tab = "dns";
   p._render(true);
   assert.match(p.shadowRoot.innerHTML, /class="tab on" data-act="tab" data-arg="overview"/);
@@ -244,4 +246,101 @@ test("the proxy tab counts hosts once, problems first, with the certificates", (
   assert.match(html, /Active rules/);
   assert.match(html, /href="https:\/\/docs\.example\.org"/);
   assert.match(html, /not monitored/);
+});
+
+test("the overview lists what needs attention, the worst first, with its action", () => {
+  const p = panel();
+  p._now = () => NOW;
+  const att = p._attention();
+  const text = att.map(([cls, t]) => `${cls} ${t.replace(/<[^>]+>/g, "")}`);
+  // the proxy upstream down and the printer's port first, then the AP and AdGuard updates, the certificate, the calls
+  assert.deepEqual(att.map(([cls]) => cls).slice(0, 2), ["bad", "bad"]);
+  assert.ok(text.some((t) => /Office switch · Printer down/.test(t)));
+  assert.ok(text.some((t) => /docs\.example\.org · upstream offline/.test(t)));
+  assert.ok(text.some((t) => /Upstairs AP · update 6\.7\.10 available/.test(t)));
+  assert.ok(text.some((t) => /2 missed calls/.test(t)));
+  assert.match(att.find(([, t]) => /missed/.test(t))[2], /data-act="press" data-arg="button\.freebox_mark_calls_as_read"/);
+});
+
+test("devices are split wired, Wi-Fi and guest", () => {
+  assert.equal(lib.networkLinkOf({ attributes: { is_wired: true } }), "wired");
+  assert.equal(lib.networkLinkOf({ attributes: { essid: "Home" } }), "wifi");
+  assert.equal(lib.networkLinkOf({ attributes: { essid: "Guest" } }), "guest");
+  assert.equal(lib.networkLinkOf({ attributes: { essid: "Home", is_guest: true } }), "guest");
+});
+
+test("a restart and an update install ask first, then press or install", () => {
+  const calls = [];
+  const p = panel(calls);
+  p._onClick({ composedPath: () => [{ dataset: { act: "press", arg: "button.freebox_restart", ask: "1" } }] });
+  assert.equal(calls.length, 0);
+  assert.match(p._askHtml(), /Run Freebox Restart\?/);
+  p._onClick({ composedPath: () => [{ dataset: { act: "confirm" } }] });
+  assert.deepEqual(calls.pop(), ["button", "press", { entity_id: "button.freebox_restart" }]);
+  p._onClick({ composedPath: () => [{ dataset: { act: "install", arg: "update.upstairs_ap" } }] });
+  assert.match(p._askHtml(), /Install the update of Upstairs AP\?/);
+  p._onClick({ composedPath: () => [{ dataset: { act: "confirm" } }] });
+  assert.deepEqual(calls.pop(), ["update", "install", { entity_id: "update.upstairs_ap" }]);
+  // A button that cuts nothing is pressed at once
+  p._onClick({ composedPath: () => [{ dataset: { act: "press", arg: "button.freebox_mark_calls_as_read" } }] });
+  assert.deepEqual(calls.pop(), ["button", "press", { entity_id: "button.freebox_mark_calls_as_read" }]);
+});
+
+test("a proxy rule is toggled through the Reverse Proxy service", () => {
+  const calls = [];
+  const p = panel(calls);
+  p._tab = "proxy";
+  p._render(true);
+  const html = p.shadowRoot.innerHTML;
+  assert.match(html, /data-act="rule" data-arg="old\.example\.org" data-on="1"/);
+  assert.match(html, /Development mode/);
+  assert.match(html, /data-act="press" data-arg="button\.zoraxy_renew_auth"/);
+  p._onClick({ composedPath: () => [{ dataset: { act: "rule", arg: "old.example.org", on: "1" } }] });
+  assert.deepEqual(calls, [["reverse_proxy", "toggle_proxy_rule", { domain: "old.example.org", enable: true }]]);
+});
+
+test("the internet tab shows the box, its sensors and its buttons", () => {
+  const p = panel();
+  p._tab = "internet";
+  p._render(true);
+  const html = p.shadowRoot.innerHTML;
+  assert.match(html, /FTTH/);
+  assert.match(html, /203\.0\.113\.42/);
+  assert.match(html, /54 °C/);
+  assert.match(html, /1,820 rpm/);
+  assert.match(html, /data-act="press" data-arg="button\.freebox_restart" data-ask="1"/);
+});
+
+test("the sparkline draws the last 24 hours only", () => {
+  const end = NOW;
+  assert.equal(lib.networkSpark([{ t: end - 1000, v: 1 }], null, end), "");
+  const svg = lib.networkSpark([{ t: end - 2 * 86400000, v: 9 }, { t: end - 3600000, v: 1 }, { t: end - 60000, v: 2 }], 4, end);
+  assert.match(svg, /<polyline/);
+  assert.doesNotMatch(svg, /NaN/);
+});
+
+test("turning a proxy rule off asks first", () => {
+  const calls = [];
+  const p = panel(calls);
+  p._onClick({ composedPath: () => [{ dataset: { act: "rule", arg: "home.example.org", on: "0" } }] });
+  assert.equal(calls.length, 0);
+  assert.match(p._askHtml(), /Turn off home\.example\.org\?/);
+  p._onClick({ composedPath: () => [{ dataset: { act: "confirm" } }] });
+  assert.deepEqual(calls, [["reverse_proxy", "toggle_proxy_rule", { domain: "home.example.org", enable: false }]]);
+});
+
+test("an access point whose entities are all unavailable reads offline", () => {
+  const off = Object.fromEntries(Object.entries(states).map(([id, s]) => [id, id.includes("upstairs_ap") ? { ...s, state: "unavailable" } : s]));
+  const p = panel([], { states: off });
+  const html = p._apCard(p._inv.routers[1]);
+  assert.match(html, /chip bad">offline/);
+  assert.match(p._apCard(p._inv.routers[0]), /chip ok">online/);
+});
+
+test("a switch's own entities are part of what re-renders", () => {
+  const p = panel();
+  assert.match(p._signature(), new RegExp(states["sensor.office_switch_rx"].last_updated.replace(/[.]/g, "\\.")));
+  const before = p._signature();
+  p._hass = { ...p._hass, states: { ...states, "switch.office_switch_poe": { ...states["switch.office_switch_poe"], state: "off", last_updated: "2026-03-12T18:31:00Z" } } };
+  assert.notEqual(p._signature(), before);
 });

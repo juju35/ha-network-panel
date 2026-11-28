@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0 - 2026-11-28
+
+### Features
+- Tabs at the level of the cards (internet box, router, switch, DNS filter, speed test and Reverse Proxy cards).
+- Overview: the network drawn as a plan with each device's figures and status; **Needs attention** with its action (named port down, proxy upstream offline, certificate to renew, firmware update to install, missed calls to mark as read, DNS protection off); the last 24 hours of traffic; devices split wired / Wi-Fi / guest; a line per service.
+- New **Internet** tab: the box with its connection type, external IP, uptime, rates over 24 hours, last speed test, temperatures, fans, Wi-Fi, missed calls, disk and Restart.
+- Wi-Fi & switches: named ports, received / sent over 24 hours, uptime and power of each switch; firmware, update, CPU, memory and temperature of each access point, with Install and Restart; clients per Wi-Fi network.
+- DNS: the last 24 hours behind each figure, settings as chips, detailed counters, update and buttons.
+- Speed: a dial against the week's best, jitter, packet loss, server, a status, the 7-day average and the slowest test.
+- Proxy: Renew on an expiring certificate, a switch per rule (Reverse Proxy's `toggle_proxy_rule`) and Zoraxy's controls.
+- A click on a tile opens the entity's details; restarts and update installs are asked first.
+
 ## 1.0.2 - 2026-11-27
 
 ### Fixes

@@ -1,7 +1,7 @@
 """Constants for the Network Panel integration."""
 
 DOMAIN = "network_panel"
-VERSION = "1.0.2"
+VERSION = "1.1.0"
 
 # Files served by the integration, and the sidebar panel (its own path, not /network_panel, so the frontend's panel
 # route never shadows the files)
